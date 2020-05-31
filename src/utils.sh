@@ -69,9 +69,21 @@ function enable_proxy_if_needed () {
   fi
 }
 
+# install adbkit 
+function install_adbkit_if_needed () {
+  flag=$(npm ls -g --depth=0 | grep adbkit)
+  if [ ! -z "$flag" ]; then
+    echo "adbkit has installed"
+  else 
+    echo "install adbkit"
+    npm i -g adbkit
+}
+
 enable_proxy_if_needed
 sleep 1
 change_language_if_needed
 sleep 1
 install_google_play
 disable_animation
+sleep 2
+install_adbkit_if_needed
