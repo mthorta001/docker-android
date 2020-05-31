@@ -69,14 +69,14 @@ function enable_proxy_if_needed () {
   fi
 }
 
-# install adbkit 
-function install_adbkit_if_needed () {
-  flag=$(npm ls -g --depth=0 | grep adbkit)
+# start adb port
+function start_adb_port_if_needed () {
+  flag=$(ps -ef | grep -w $ADB_PORT | grep -v grep)
   if [ ! -z "$flag" ]; then
-    echo "adbkit has installed"
+    echo "adb port running on port: $ADB_PORT"
   else 
-    echo "install adbkit"
-    npm i -g adbkit
+    echo "start adb port on $ADB_PORT $UDID"
+    nohup adbkit usb-device-to-tcp -p $ADB_PORT $UDID > adbkit.$ADB_PORT.out 2>&1 &
 }
 
 enable_proxy_if_needed
@@ -86,4 +86,4 @@ sleep 1
 install_google_play
 disable_animation
 sleep 2
-install_adbkit_if_needed
+start_adb_port_if_needed
