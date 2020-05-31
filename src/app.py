@@ -134,6 +134,9 @@ def appium_run(avd_name: str):
     if relaxed_security:
         cmd += ' --relaxed-security'
 
+    appium_port = int(os.getenv('APPIUM_PORT', 4723))
+    cmd += ' -p {appium_port}'.format(appium_port=appium_port)
+
     default_web_browser = os.getenv('BROWSER')
     cmd += ' --chromedriver-executable {driver}'.format(driver=CHROME_DRIVER)
 

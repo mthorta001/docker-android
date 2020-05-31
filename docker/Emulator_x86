@@ -81,6 +81,9 @@ RUN apt-get -qqy update && apt-get -qqy install --no-install-recommends \
  && apt clean all \
  && rm -rf /var/lib/apt/lists/*
 
+ # install adbkit
+ RUN npm i -g adbkit
+
 #=======
 # noVNC
 # Use same commit id that docker-selenium uses
