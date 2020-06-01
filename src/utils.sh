@@ -77,6 +77,7 @@ function start_adb_port_if_needed () {
   else 
     echo "start adb port on $ADB_PORT $UDID"
     nohup adbkit usb-device-to-tcp -p $ADB_PORT $UDID > adbkit.$ADB_PORT.out 2>&1 &
+  fi
 }
 
 enable_proxy_if_needed
