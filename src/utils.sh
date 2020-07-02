@@ -69,16 +69,16 @@ function enable_proxy_if_needed () {
   fi
 }
 
-# start adb port
-function start_adb_port_if_needed () {
-  flag=$(ps -ef | grep -w $ADB_PORT | grep -v grep)
-  if [ ! -z "$flag" ]; then
-    echo "adb port running on port: $ADB_PORT"
-  else 
-    echo "start adb port on $ADB_PORT $UDID"
-    nohup adbkit usb-device-to-tcp -p $ADB_PORT $UDID > adbkit.$ADB_PORT.out 2>&1 &
-  fi
-}
+# # start adb port
+# function start_adb_port_if_needed () {
+#   flag=$(ps -ef | grep -w $ADB_PORT | grep -v grep)
+#   if [ ! -z "$flag" ]; then
+#     echo "adb port running on port: $ADB_PORT"
+#   else 
+#     echo "start adb port on $ADB_PORT $UDID"
+#     nohup adbkit usb-device-to-tcp -p $ADB_PORT $UDID > adbkit.$ADB_PORT.out 2>&1 &
+#   fi
+# }
 
 enable_proxy_if_needed
 sleep 1
@@ -86,5 +86,5 @@ change_language_if_needed
 sleep 1
 install_google_play
 disable_animation
-sleep 2
-start_adb_port_if_needed
+# sleep 2
+# start_adb_port_if_needed
