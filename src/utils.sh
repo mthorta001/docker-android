@@ -69,16 +69,42 @@ function enable_proxy_if_needed () {
   fi
 }
 
-# # start adb port
-# function start_adb_port_if_needed () {
-#   flag=$(ps -ef | grep -w $ADB_PORT | grep -v grep)
-#   if [ ! -z "$flag" ]; then
-#     echo "adb port running on port: $ADB_PORT"
-#   else 
-#     echo "start adb port on $ADB_PORT $UDID"
-#     nohup adbkit usb-device-to-tcp -p $ADB_PORT $UDID > adbkit.$ADB_PORT.out 2>&1 &
-#   fi
-# }
+# register capability
+function register_capability() {
+  echo "register capability of container: emulator$APPIUM_PORT"
+  curl \
+  -H "accept: application/json" \
+  -H "content-type: application/json" \
+  -X POST "http://xia01-i01-hbt03.lab.rcch.ringcentral.com:9999/api/v1/capabilities" \
+  -d "$(cat <<EOF
+  {
+        "docker_container": "emulator$APPIUM_PORT",
+        "hostname": "$HOST_IP",
+        "devices": [
+          {
+            "platform": "android",
+            "platform_version": "$ANDROID_VERSION",
+            "device_name": "$DEVICE",
+            "device_model": "$AVD_NAME",
+            "udid": "$UDID",
+            "adb_port": $ADB_PORT,
+            "is_simulator": true,
+            "labels": [
+                "Emulator"
+            ]
+          }
+        ],
+        "appiums": [
+          {
+            "port": $APPIUM_PORT,
+            "version": "$(appium --version)"
+          }
+        ]
+  }
+EOF
+)"
+}
+
 
 enable_proxy_if_needed
 sleep 1
@@ -86,5 +112,5 @@ change_language_if_needed
 sleep 1
 install_google_play
 disable_animation
-# sleep 2
-# start_adb_port_if_needed
+sleep 2
+register_capability
