@@ -147,16 +147,18 @@ function build() {
             # It is because there is no ARM EABI v7a System Image for 6.0
             IMG_TYPE=google_apis
             BROWSER=browser
+        elif [ "$v" == "9.0"]; then
+            sys_img=x86_64
+            echo "[BUILD] System Image: $sys_img"
         else
             #adb root cannot be run in IMG_TYPE=google_apis_playstore 
             IMG_TYPE=google_apis
+            sys_img=$processor
             BROWSER=chrome
         fi
         echo "[BUILD] IMAGE TYPE: $IMG_TYPE"
         level=${list_of_levels[$v]}
         echo "[BUILD] API Level: $level"
-        sys_img=$processor
-        echo "[BUILD] System Image: $sys_img"
         chrome_driver="${chromedriver_versions[$v]}"
         echo "[BUILD] chromedriver version: $chrome_driver"
         image_version="$IMAGE-$processor-$v:$RELEASE"
