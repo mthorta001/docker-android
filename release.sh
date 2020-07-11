@@ -148,8 +148,9 @@ function build() {
             IMG_TYPE=google_apis
             BROWSER=browser
         elif [ "$v" == "9.0" ]; then
+            IMG_TYPE=google_apis
             sys_img=x86_64
-            echo "[BUILD] System Image: $sys_img"
+            BROWSER=chrome
         else
             #adb root cannot be run in IMG_TYPE=google_apis_playstore 
             IMG_TYPE=google_apis
@@ -157,6 +158,7 @@ function build() {
             BROWSER=chrome
         fi
         echo "[BUILD] IMAGE TYPE: $IMG_TYPE"
+        echo "[BUILD] System Image: $sys_img"
         level=${list_of_levels[$v]}
         echo "[BUILD] API Level: $level"
         chrome_driver="${chromedriver_versions[$v]}"
