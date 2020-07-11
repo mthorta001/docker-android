@@ -130,7 +130,8 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
 ENV PATH ${PATH}:${ANDROID_HOME}/build-tools
 
 RUN yes | sdkmanager --licenses && \
-    sdkmanager "platforms;android-${API_LEVEL}" "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" "emulator"
+    if ["$API_LEVEL" = "28"]; then sdkmanager "platforms;android-${API_LEVEL}" "system-images;android-${API_LEVEL};${IMG_TYPE};x86_64" "emulator"; \
+    else sdkmanager "platforms;android-${API_LEVEL}" "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" "emulator"; fi
 
 #==============================================
 # Download proper version of chromedriver
