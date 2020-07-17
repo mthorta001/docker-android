@@ -127,7 +127,7 @@ def appium_run(avd_name: str):
     :param avd_name: Name of android virtual device / emulator
     """
     appium_port = int(os.getenv('APPIUM_PORT', 4723))
-    DEFAULT_LOG_PATH = '/var/log/supervisor/appium_{port}.log'.format(port=appium_port)
+    DEFAULT_LOG_PATH = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
 
     cmd = 'appium --log {log} -p {appium_port}'.format(log=os.getenv('APPIUM_LOG', DEFAULT_LOG_PATH), appium_port=appium_port)
 
