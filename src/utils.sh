@@ -105,6 +105,11 @@ EOF
 )"
 }
 
+# disable chrome first open welcome screen
+function disable_chrome_accept_continue() {
+  adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line' 
+}
+
 
 enable_proxy_if_needed
 sleep 1
@@ -114,3 +119,5 @@ install_google_play
 disable_animation
 sleep 2
 register_capability
+sleep 1
+disable_chrome_accept_continue
