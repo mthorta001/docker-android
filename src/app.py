@@ -116,6 +116,8 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
     with open(config_path, 'a') as file:
         file.write('skin.path={sp}'.format(sp=skin_path))
         file.write('\ndisk.dataPartition.size={dp}'.format(dp=dp_size))
+        file.write('\nhw.audioInput=no')
+        file.write('\nhw.audioOutput=no')
 
     logger.info('Skin was added in config.ini')
 
