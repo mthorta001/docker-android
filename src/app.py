@@ -119,6 +119,7 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
         file.write('\nhw.audioInput=no')
         file.write('\nhw.audioOutput=no')
 
+
     logger.info('Skin was added in config.ini')
 
 
@@ -225,11 +226,11 @@ def run():
     if is_first_run:
         logger.info('Emulator was not previously initialized. Preparing a new one...')
         port = os.getenv('UDID').replace('emulator-','')
-        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose {custom_args}'.format(name=avd_name, port=port, custom_args=custom_args)
+        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose {custom_args}'.format(name=avd_name, port=port, custom_args=custom_args)
     else:
         logger.info('Using previously initialized AVD...')
         port = os.getenv('UDID').replace('emulator-','')
-        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -verbose -writable-system {custom_args}'.format(name=avd_name, port=port, custom_args=custom_args)
+        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -gpu swiftshader_indirect -accel on -verbose -writable-system {custom_args}'.format(name=avd_name, port=port, custom_args=custom_args)
 
     appium = convert_str_to_bool(str(os.getenv('APPIUM', False)))
     if appium:
