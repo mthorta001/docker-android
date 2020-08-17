@@ -31,13 +31,6 @@ function install_google_play () {
   adb install -r "/root/google_play_store.apk"
 }
 
-function disable_animation () {
-  # To improve performance
-  adb shell "settings put global window_animation_scale 0.0"
-  adb shell "settings put global transition_animation_scale 0.0"
-  adb shell "settings put global animator_duration_scale 0.0"
-}
-
 function enable_proxy_if_needed () {
   if [ "$ENABLE_PROXY_ON_EMULATOR" = true ]; then
     if [ ! -z "${HTTP_PROXY// }" ]; then
@@ -56,9 +49,15 @@ function enable_proxy_if_needed () {
         adb root
 
         echo "Set up the Proxy"
+        adb shell "content update --uri content://telephony/carriers --bind proxy:s:"0.0.0.0" --bind port:s:"0000" --where "mcc=310" --where "mnc=260""
+        sleep 5
         adb shell "content update --uri content://telephony/carriers --bind proxy:s:"${p[0]}" --bind port:s:"${p[1]}" --where "mcc=310" --where "mnc=260""
 
         adb unroot
+
+        # Mobile data need to be restarted for Android 10 or higher
+        adb shell svc data disable
+        adb shell svc data enable
       else
         echo "Please use http:// in the beginning!"
       fi
@@ -68,6 +67,7 @@ function enable_proxy_if_needed () {
     fi
   fi
 }
+
 
 # register capability
 function register_capability() {
@@ -111,13 +111,12 @@ function disable_chrome_accept_continue() {
 }
 
 
-enable_proxy_if_needed
-sleep 1
 change_language_if_needed
 sleep 1
+enable_proxy_if_needed
+sleep 1
 install_google_play
-disable_animation
-sleep 2
+sleep 1
 register_capability
 sleep 1
 disable_chrome_accept_continue

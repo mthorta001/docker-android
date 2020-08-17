@@ -10,7 +10,7 @@ else
 fi
 
 if [ -z "$2" ]; then
-    read -p "Android version (5.0.1|5.1.1|6.0|7.0|7.1.1|8.0|8.1|9.0|10.0|all): " ANDROID_VERSION
+    read -p "Android version (5.0.1|5.1.1|6.0|7.0|7.1.1|8.0|8.1|9.0|10.0|11.0|all): " ANDROID_VERSION
 else
     ANDROID_VERSION=$2
 fi
@@ -31,6 +31,7 @@ declare -A list_of_levels=(
         [8.1]=27
         [9.0]=28
         [10.0]=29
+        [11.0]=30
 )
 
 # The version of the Chrome browser installed on the Android emulator needs to be known beforehand
@@ -45,6 +46,7 @@ declare -A chromedriver_versions=(
         [8.1]="2.33"
         [9.0]="2.40"
         [10.0]="74.0.3729.6"
+        [11.0]="83.0.4103.39"
 )
 
 function get_android_versions() {
@@ -151,11 +153,17 @@ function build() {
             IMG_TYPE=google_apis
             sys_img=x86_64
             BROWSER=chrome
+        elif [ "$v" == "" ]; then
+            IMG_TYPE=google_apis
+            BROWSER=chrome            
         else
             #adb root cannot be run in IMG_TYPE=google_apis_playstore 
             IMG_TYPE=google_apis
             sys_img=$processor
             BROWSER=chrome
+            if [ "$v" == "9.0" ]; then
+                processor=x86_64
+            fi
         fi
         echo "[BUILD] IMAGE TYPE: $IMG_TYPE"
         echo "[BUILD] System Image: $sys_img"
@@ -163,8 +171,8 @@ function build() {
         echo "[BUILD] API Level: $level"
         chrome_driver="${chromedriver_versions[$v]}"
         echo "[BUILD] chromedriver version: $chrome_driver"
-        image_version="$IMAGE-$processor-$v:$RELEASE"
-        image_latest="$IMAGE-$processor-$v:latest"
+        image_version="$IMAGE-x86-$v:$RELEASE"
+        image_latest="$IMAGE-x86-$v:latest"
         echo "[BUILD] Image name: $image_version and $image_latest"
         echo "[BUILD] Dockerfile: $FILE_NAME"
         docker build -t $image_version --build-arg TOKEN=$TOKEN --build-arg ANDROID_VERSION=$v --build-arg API_LEVEL=$level \
@@ -178,8 +186,8 @@ function build() {
 function push() {
     # Push docker image(s)
     for v in "${versions[@]}"; do
-        image_version="$IMAGE-$processor-$v:$RELEASE"
-        image_latest="$IMAGE-$processor-$v:latest"
+        image_version="$IMAGE-x86-$v:$RELEASE"
+        image_latest="$IMAGE-x86-$v:latest"
         echo "[PUSH] Image name: $image_version and $image_latest"
         docker push $image_version
         docker push $image_latest

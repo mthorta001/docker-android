@@ -52,6 +52,7 @@ List of Docker images
 |Linux|8.1|27|chrome|61.0|2.33|budtmo/docker-android-x86-8.1|[![](https://images.microbadger.com/badges/image/budtmo/docker-android-x86-8.1.svg)](https://microbadger.com/images/budtmo/docker-android-x86-8.1 "Get your own image badge on microbadger.com")|
 |Linux|9.0|28|chrome|66.0|2.40|budtmo/docker-android-x86-9.0|[![](https://images.microbadger.com/badges/image/budtmo/docker-android-x86-9.0.svg)](https://microbadger.com/images/budtmo/docker-android-x86-9.0 "Get your own image badge on microbadger.com")|
 |Linux|10.0|29|chrome|74.0|74.0.3729.6|budtmo/docker-android-x86-10.0|[![](https://images.microbadger.com/badges/image/budtmo/docker-android-x86-10.0.svg)](https://microbadger.com/images/budtmo/docker-android-x86-10.0 "Get your own image badge on microbadger.com")|
+|Linux|11.0|30|chrome|83.0|83.0.4103.39|budtmo/docker-android-x86-11.0|[![](https://images.microbadger.com/badges/image/budtmo/docker-android-x86-11.0.svg)](https://microbadger.com/images/budtmo/docker-android-x86-11.0 "Get your own image badge on microbadger.com")|
 |All |-|-|-|-|-|budtmo/docker-android-real-device|[![](https://images.microbadger.com/badges/image/budtmo/docker-android-real-device.svg)](https://microbadger.com/images/budtmo/docker-android-real-device "Get your own image badge on microbadger.com")|
 |All|All|All|All|All|All|budtmo/docker-android-genymotion|[![](https://images.microbadger.com/badges/image/budtmo/docker-android-genymotion.svg)](https://microbadger.com/images/budtmo/docker-android-genymotion "Get your own image badge on microbadger.com")|
 
@@ -101,7 +102,7 @@ Quick Start
 
    - For different OS, localhost should work.
 
-3. Open ***http://docker-host-ip-address:6080*** from web browser.
+3. Open ***http://docker-host-ip-address:6080*** from web browser. Note: Adding ```?view_only=true``` will give user only view only permission.
 
 Custom configurations
 ---------------------
@@ -208,8 +209,7 @@ SMS Simulation
 
 Google Play Services and Google Play Store
 ------------------------------------------
-
-Docker-Android contains Google Play Service (v12.8.74) and Google Play Store (v11.0.50). Both applications are downloaded from [apklinker](https://www.apklinker.com/), so please be aware of it in case you use private/company account to that applications.
+Not installed at this time.
 
 Jenkins
 -------
@@ -249,7 +249,18 @@ The Emulator skins are taken from [Android Studio IDE](https://developer.android
 
 Security
 --------
-All docker images are protected by [Polyverse](https://polyverse.io/) by scrambling the Linux packages. For more information please read [this](https://polyverse.io/how-it-works/)
+All docker images are protected by [Polyverse](https://polyverse.io/) by scrambling the Linux packages. For more information please visit [this link](https://youtu.be/eSZNP42n-pM)
+
+Users
+-----
+Docker-Android are being used by 100+ countries around the world.
+
+[![ga-datastudio-docker-android](./images/docker-android_users.png)](https://datastudio.google.com/s/ht7HVKHKAQE)
+
+Stargazers over time
+--------------------
+
+[![Stargazers over time](https://starchart.cc/budtmo/docker-android.svg)](https://starchart.cc/budtmo/docker-android)
 
 Special Thanks
 --------------

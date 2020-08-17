@@ -1,3 +1,8 @@
+VNC pass
+--------
+
+Passing ```VNC_PASSWORD="your_pass_here"``` will secure your vnc connection. 
+
 Proxy
 -----
 
@@ -72,3 +77,8 @@ docker run --privileged -d -p 6080:6080 -p 4723:4723 -p 5554:5554 -p 5555:5555 -
 ```
 
 For the first run, this will create a new avd and all the changes will be accessible in the `local_backup` directory. Now for all future runs, it will reuse the avds. Even this should work with new releases of `docker-android`
+
+Nginx
+-----
+
+Sample nginx configuration can be found [here](nginx)
