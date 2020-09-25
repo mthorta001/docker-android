@@ -75,7 +75,7 @@ function register_capability() {
   curl \
   -H "accept: application/json" \
   -H "content-type: application/json" \
-  -X POST "http://xia01-i01-hbt03.lab.rcch.ringcentral.com:9999/api/v1/capabilities" \
+  -X POST "http://aqa01-i01-xta02.lab.nordigy.ru:10000/api/v1/capabilities" \
   -d "$(cat <<EOF
   {
         "docker_container": "emulator$APPIUM_PORT",
