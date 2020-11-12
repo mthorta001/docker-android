@@ -75,7 +75,7 @@ function register_capability() {
   curl \
   -H "accept: application/json" \
   -H "content-type: application/json" \
-  -X POST "http://aqa01-i01-xta02.lab.nordigy.ru:10000/api/v1/capabilities" \
+  -X POST "$DEVICE_SPY" \
   -d "$(cat <<EOF
   {
         "docker_container": "emulator$APPIUM_PORT",
