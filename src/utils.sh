@@ -118,11 +118,12 @@ function close_is_not_responding() {
   echo "Current activity:"
   echo $activity
   echo ""
-  for i in {1..120}
+  for i in {1..180}
   do
-    if [[ "$activity" == *"com.google.android.apps.nexuslauncher"* ]]; then
+    if [[ "$activity" == *"com.google.android.apps.nexuslauncher"* ]] || [[ "$activity" == *"com.android.settings"* ]]; then
         echo "adb tap wait button by coordinate"
         adb shell input tap 540 1059
+        sleep 1
     fi
   done
 }
@@ -137,5 +138,5 @@ sleep 1
 register_capability
 sleep 1
 disable_chrome_accept_continue
-sleep 2
+sleep 60
 close_is_not_responding
