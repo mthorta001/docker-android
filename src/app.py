@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import subprocess
-import uuid
+import time
 
 from src import CHROME_DRIVER, CONFIG_FILE, ROOT
 from src import log
@@ -243,6 +243,9 @@ def run():
         appium_run(avd_name)
     else:
         result = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()
+    # sleep 2 minutes wait emulator loading
+    print("Current time: %s" % time.ctime())
+    time.sleep(120)
 
 
 if __name__ == '__main__':
