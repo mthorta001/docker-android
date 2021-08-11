@@ -107,7 +107,15 @@ EOF
 
 # disable chrome first open welcome screen
 function disable_chrome_accept_continue() {
+  echo "disable chrome first open welcome screen"
   adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line' 
+}
+
+# close System UI isn't responding when start
+# tap the coordinate of "Wait" button
+function close_is_not_responding() {
+  echo "tap wait button by coordinate to close system ui isn't responding alert"
+  adb shell input tap 540 1059
 }
 
 
@@ -120,3 +128,5 @@ sleep 1
 register_capability
 sleep 1
 disable_chrome_accept_continue
+sleep 2
+close_is_not_responding
