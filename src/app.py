@@ -244,8 +244,9 @@ def run():
     else:
         result = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()
     # sleep 2 minutes wait emulator loading
-    print("Current time: %s" % time.ctime())
-    time.sleep(120)
+    logger.info('Start sleep: {current_time}'.format(current_time=time.ctime()))
+    time.sleep(240)
+    logger.info('Wake up: {current_time}'.format(current_time=time.ctime()))
 
 
 if __name__ == '__main__':
