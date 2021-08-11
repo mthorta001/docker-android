@@ -114,8 +114,17 @@ function disable_chrome_accept_continue() {
 # close System UI isn't responding when start
 # tap the coordinate of "Wait" button
 function close_is_not_responding() {
-  echo "tap wait button by coordinate to close system ui isn't responding alert"
-  adb shell input tap 540 1059
+  activity="$(adb shell dumpsys activity | grep top-activity)"
+  echo "Current activity:"
+  echo $activity
+  echo ""
+  for i in {1..120}
+  do
+    if [[ "$activity" == *"com.google.android.apps.nexuslauncher"* ]]; then
+        echo "adb tap wait button by coordinate"
+        adb shell input tap 540 1059
+    fi
+  done
 }
 
 
