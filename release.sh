@@ -151,10 +151,6 @@ function build() {
             # It is because there is no ARM EABI v7a System Image for 6.0
             IMG_TYPE=google_apis
             BROWSER=browser
-        elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ]; then
-            IMG_TYPE=google_apis
-            sys_img=x86_64
-            BROWSER=chrome
         elif [ "$v" == "" ]; then
             IMG_TYPE=google_apis
             BROWSER=chrome            
@@ -164,7 +160,7 @@ function build() {
             sys_img=$processor
             BROWSER=chrome
             if [ "$v" == "8.1" ]; then
-                processor=x86
+                sys_img=x86
             fi
         fi
         echo "[BUILD] IMAGE TYPE: $IMG_TYPE"

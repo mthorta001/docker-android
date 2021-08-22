@@ -119,8 +119,7 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
         file.write('\nhw.lcd.density=420')
         file.write('\nhw.audioInput=no')
         file.write('\nhw.audioOutput=no')
-
-
+        file.write('\nhw.gps=no')
     logger.info('Skin was added in config.ini')
 
 
