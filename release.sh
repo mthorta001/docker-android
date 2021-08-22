@@ -76,7 +76,7 @@ function get_android_versions() {
 }
 
 get_android_versions
-processor=x86
+processor=x86_64
 
 function test() {
     # Prepare needed parameter to run tests
@@ -160,11 +160,11 @@ function build() {
             BROWSER=chrome            
         else
             #adb root cannot be run in IMG_TYPE=google_apis_playstore 
-            IMG_TYPE=google_apis
+            IMG_TYPE=google_apis_playstore
             sys_img=$processor
             BROWSER=chrome
-            if [ "$v" == "9.0" ]; then
-                processor=x86_64
+            if [ "$v" == "8.1" ]; then
+                processor=x86
             fi
         fi
         echo "[BUILD] IMAGE TYPE: $IMG_TYPE"
