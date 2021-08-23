@@ -146,6 +146,7 @@ function build() {
         # Find image type and default web browser
         if [ "$v" == "5.0.1" ] || [ "$v" == "5.1.1" ] || [ "$v" == "8.1" ]; then
             IMG_TYPE=default
+            sys_img=$processor
             BROWSER=browser
         else
             #adb root cannot be run in IMG_TYPE=google_apis_playstore 
