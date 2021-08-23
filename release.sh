@@ -76,7 +76,7 @@ function get_android_versions() {
 }
 
 get_android_versions
-processor=x86
+processor=x86_64
 
 function test() {
     # Prepare needed parameter to run tests
@@ -144,28 +144,14 @@ function build() {
 
     for v in "${versions[@]}"; do
         # Find image type and default web browser
-        if [ "$v" == "5.0.1" ] || [ "$v" == "5.1.1" ]; then
+        if [ "$v" == "5.0.1" ] || [ "$v" == "5.1.1" ] || [ "$v" == "8.1" ]; then
             IMG_TYPE=default
             BROWSER=browser
-        elif [ "$v" == "6.0" ]; then
-            # It is because there is no ARM EABI v7a System Image for 6.0
-            IMG_TYPE=google_apis
-            BROWSER=browser
-        elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ]; then
-            IMG_TYPE=google_apis
-            sys_img=x86_64
-            BROWSER=chrome
-        elif [ "$v" == "" ]; then
-            IMG_TYPE=google_apis
-            BROWSER=chrome            
         else
             #adb root cannot be run in IMG_TYPE=google_apis_playstore 
             IMG_TYPE=google_apis
             sys_img=$processor
             BROWSER=chrome
-            if [ "$v" == "9.0" ]; then
-                processor=x86_64
-            fi
         fi
         echo "[BUILD] IMAGE TYPE: $IMG_TYPE"
         echo "[BUILD] System Image: $sys_img"
