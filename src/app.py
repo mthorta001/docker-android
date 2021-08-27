@@ -115,13 +115,20 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
     config_path = '/'.join([avd_path, 'config.ini'])
     with open(config_path, 'a') as file:
         file.write('skin.path={sp}'.format(sp=skin_path))
+        logger.info('Skin was added in config.ini')
         file.write('\ndisk.dataPartition.size={dp}'.format(dp=dp_size))
-        file.write('\nhw.lcd.density=420')
-        file.write('\nhw.audioInput=no')
         file.write('\nhw.audioOutput=no')
-
-
-    logger.info('Skin was added in config.ini')
+    with open(config_path, 'r') as fi:
+        lines = fi.readlines()
+    with open(config_path, 'w') as fi:
+        for line in lines:
+            if 'hw.audioInput=yes' in line:
+                line = line.replace('hw.audioInput=yes', 'hw.audioInput=no')
+            elif 'hw.battery=yes' in line:
+                line = line.replace('hw.battery=yes', 'hw.battery=no')
+            elif 'hw.gps=yes' in line:
+                line = line.replace('hw.gps=yes', 'hw.gps=no')
+            fi.write(line)
 
 
 def appium_run(avd_name: str):
