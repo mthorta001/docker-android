@@ -128,6 +128,12 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
                 line = line.replace('hw.battery=yes', 'hw.battery=no')
             elif 'hw.gps=yes' in line:
                 line = line.replace('hw.gps=yes', 'hw.gps=no')
+            elif 'hw.sdCard=yes' in line:
+                line = line.replace('hw.sdCard=yes', 'hw.sdCard=no')
+            elif 'hw.sensors.orientation=yes' in line:
+                line = line.replace('hw.sensors.orientation=yes', 'hw.sensors.orientation=no')
+            elif 'hw.sensors.proximity=yes' in line:
+                line = line.replace('hw.sensors.proximity=yes', 'hw.sensors.proximity=no')
             elif 'hw.lcd.density=480' in line:
                 line = line.replace('hw.lcd.density=480', 'hw.lcd.density=420')
             fi.write(line)
