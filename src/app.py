@@ -118,6 +118,15 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
         logger.info('Skin was added in config.ini')
         file.write('\ndisk.dataPartition.size={dp}'.format(dp=dp_size))
         file.write('\nhw.audioOutput=no')
+        file.write('\nhw.gsmModem=no')
+        file.write('\nhw.sensors.light=no')
+        file.write('\nhw.sensors.pressure=no')
+        file.write('\nhw.sensors.humidity=no')
+        file.write('\nhw.sensors.magnetic_field=no')
+        file.write('\nhw.sensors.magnetic_field_uncalibrated=no')
+        file.write('\nhw.sensors.gyroscope_uncalibrated=no')
+        file.write('\nhw.sensors.temperature=no')
+        file.write('\nhw.sensors.hinge=no')
     with open(config_path, 'r') as fi:
         lines = fi.readlines()
     with open(config_path, 'w') as fi:
@@ -130,6 +139,8 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
                 line = line.replace('hw.gps=yes', 'hw.gps=no')
             elif 'hw.sdCard=yes' in line:
                 line = line.replace('hw.sdCard=yes', 'hw.sdCard=no')
+            elif 'hw.accelerometer=yes' in line:
+                line = line.replace('hw.accelerometer=yes', 'hw.accelerometer=no')
             elif 'hw.sensors.orientation=yes' in line:
                 line = line.replace('hw.sensors.orientation=yes', 'hw.sensors.orientation=no')
             elif 'hw.sensors.proximity=yes' in line:
