@@ -47,7 +47,7 @@ declare -A chromedriver_versions=(
         [8.1]="2.33"
         [9.0]="2.40"
         [10.0]="74.0.3729.6"
-        [11.0]="90.0.4430.24"
+        [11.0]="83.0.4103.39"
         [12.0]="92.0.4515.43"
 )
 
@@ -151,7 +151,7 @@ function build() {
             # It is because there is no ARM EABI v7a System Image for 6.0
             IMG_TYPE=google_apis
             BROWSER=browser
-        elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ]; then
+        elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ] || [ "$v" == "11.0" ]; then
             IMG_TYPE=google_apis
             sys_img=x86_64
             BROWSER=chrome
