@@ -118,7 +118,7 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
         logger.info('Skin was added in config.ini')
         file.write('\ndisk.dataPartition.size={dp}'.format(dp=dp_size))
         file.write('\nhw.audioOutput=no')
-        file.write('\nhw.gsmModem=no')
+        # file.write('\nhw.gsmModem=no')
         file.write('\nhw.sensors.light=no')
         file.write('\nhw.sensors.pressure=no')
         file.write('\nhw.sensors.humidity=no')
