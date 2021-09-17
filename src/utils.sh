@@ -111,6 +111,13 @@ function disable_chrome_accept_continue() {
   adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line' 
 }
 
+# adb enable wifi
+# to resolve wifi may turn off when android 12 emulator container started
+function enable_wifi() {
+    echo "enable wifi"
+    adb shell svc wifi enable
+}
+
 # close System UI isn't responding when start
 # tap the coordinate of "Wait" button
 function close_is_not_responding() {
