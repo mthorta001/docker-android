@@ -147,3 +147,5 @@ sleep 1
 disable_chrome_accept_continue
 sleep 60
 close_is_not_responding
+sleep 1
+enable_wifi
