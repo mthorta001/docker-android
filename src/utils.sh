@@ -115,6 +115,8 @@ function disable_chrome_accept_continue() {
 # to resolve wifi may turn off when android 12 emulator container started
 function enable_wifi() {
     echo "enable wifi"
+    adb shell svc wifi disable
+    sleep 5
     adb shell svc wifi enable
 }
 
