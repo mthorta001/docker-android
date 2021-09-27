@@ -114,10 +114,14 @@ function disable_chrome_accept_continue() {
 # adb enable wifi
 # to resolve wifi may turn off when android 12 emulator container started
 function enable_wifi() {
-    echo "enable wifi"
+    connectivity="$(adb shell settings get global wifi_on)"
+    echo "wifi status ==> $connectivity"
+    echo "disable wifi"
     adb shell svc wifi disable
     sleep 5
+    echo "enable wifi"
     adb shell svc wifi enable
+    echo "wifi status ==> $connectivity"
 }
 
 # close System UI isn't responding when start
