@@ -67,7 +67,7 @@ def is_initialized(device_name) -> bool:
     return False
 
 
-ANDROID_HOME = get_or_raise('ANDROID_HOME')
+ANDROID_HOME = '/root'
 ANDROID_VERSION = get_or_raise('ANDROID_VERSION')
 API_LEVEL = get_or_raise('API_LEVEL')
 PROCESSOR = get_or_raise('PROCESSOR')
