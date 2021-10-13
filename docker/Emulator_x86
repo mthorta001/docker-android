@@ -129,7 +129,7 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     APP_TYPE=Emulator
 # ENV PATH ${PATH}:${ANDROID_HOME}/build-tools
 
-RUN yes | sdkmanager --licenses && \
+RUN yes | sdkmanager --licenses --sdk_root=/root && \
     sdkmanager "platforms;android-${API_LEVEL}" "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" "emulator" --sdk_root=/root
 
 #==============================================
