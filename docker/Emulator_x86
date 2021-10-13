@@ -1,4 +1,4 @@
-FROM rcswain/appium:v1.4
+FROM rcswain/appium:latest
 
 LABEL maintainer "Budi Utomo <budtmo.os@gmail.com>"
 
