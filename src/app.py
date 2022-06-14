@@ -157,14 +157,18 @@ def appium_run(avd_name: str):
     :param avd_name: Name of android virtual device / emulator
     """
     appium_port = int(os.getenv('APPIUM_PORT', 4723))
+    default_capabilities = os.getenv("DEFAULT_CAPABILITIES", {})
     DEFAULT_LOG_PATH = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
 
-    cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override'.format(log=os.getenv('APPIUM_LOG', DEFAULT_LOG_PATH), appium_port=appium_port)
+    cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override'\
+        .format(log=os.getenv('APPIUM_LOG', DEFAULT_LOG_PATH), appium_port=appium_port)
 
     relaxed_security = convert_str_to_bool(str(os.getenv('RELAXED_SECURITY', False)))
     logger.info('Relaxed security? {rs}'.format(rs=relaxed_security))
     if relaxed_security:
         cmd += ' --relaxed-security'
+    if default_capabilities:
+        cmd += ' --default-capabilities ' + default_capabilities
 
     default_web_browser = os.getenv('BROWSER')
     cmd += ' --chromedriver-executable {driver}'.format(driver=CHROME_DRIVER)

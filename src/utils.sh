@@ -119,7 +119,7 @@ function handle_not_responding() {
   if [ "$not_responding" ]; then
     adb shell input tap 540 1059
     echo "current screen is $not_responding ,tap Wait"
-
+    botman $HOST_IP $UDID not responding, tap Wait
   fi
 }
 
@@ -140,6 +140,7 @@ sleep 1
 register_capability
 sleep 1
 disable_chrome_accept_continue
+sleep 1
 while true; do
   handle_not_responding
   sleep 10
