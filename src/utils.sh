@@ -10,7 +10,7 @@ function wait_emulator_to_be_ready () {
       boot_completed=true
     else
       sleep 1
-    fi      
+    fi
   done
 }
 
@@ -68,7 +68,6 @@ function enable_proxy_if_needed () {
   fi
 }
 
-
 # register capability
 function register_capability() {
   echo "register capability of container: emulator$APPIUM_PORT"
@@ -108,7 +107,7 @@ EOF
 # disable chrome first open welcome screen
 function disable_chrome_accept_continue() {
   echo "disable chrome first open welcome screen"
-  adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line' 
+  adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line'
 }
 
 # close System UI isn't responding when start
@@ -119,9 +118,20 @@ function handle_not_responding() {
   if [ "$not_responding" ]; then
     adb shell input tap 540 1059
     echo "current screen is $not_responding ,tap Wait"
+    
   fi
 }
 
+TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
+function botman() {
+TIME=$(date "+%F %T")
+curl -X POST "https://botman.lab.nordigy.ru/v2/user/message" \
+-H "Authorization: Bearer $TOKEN" \
+-H "content-type: application/json" \
+-d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$TIME  $*\" }"
+}
+
+botman $HOST_IP start emulator: emulator$APPIUM_PORT
 change_language_if_needed
 sleep 1
 enable_proxy_if_needed
