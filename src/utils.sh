@@ -126,21 +126,14 @@ function enable_wifi() {
 
 # close System UI isn't responding when start
 # tap the coordinate of "Wait" button
-function close_is_not_responding() {
-  activity="$(adb shell dumpsys activity | grep top-activity)"
-  echo "Current activity:"
-  echo $activity
-  echo ""
-  for i in {1..180}
-  do
-    if [[ "$activity" == *"com.google.android.apps.nexuslauncher"* ]] || [[ "$activity" == *"com.android.settings"* ]]; then
-        echo "adb tap wait button by coordinate"
-        adb shell input tap 540 1059
-        sleep 1
-    fi
-  done
+function handle_not_responding() {
+  echo "checking not responding..."
+  not_responding=$(adb shell dumpsys window windows | grep 'Not Responding')
+  if [ "$not_responding" ]; then
+    adb shell input tap 540 1059
+    echo "current screen is $not_responding ,tap Wait"
+  fi
 }
-
 
 change_language_if_needed
 sleep 1
@@ -151,7 +144,9 @@ sleep 1
 register_capability
 sleep 1
 disable_chrome_accept_continue
-sleep 60
-close_is_not_responding
 sleep 1
 enable_wifi
+while true; do
+    handle_not_responding
+    sleep 10
+done
