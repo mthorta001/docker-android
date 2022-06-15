@@ -16,6 +16,8 @@ jobs:
         android: [8.1, 10.0, 11.0, 12.0]
         tag: [v1.21.0.9]
     env:
+      RELAXED_SECURITY: True
+      DEFAULT_CAPABILITIES: '{"skipDeviceInitialization": false}'
       ANDROID_VERSION: ${{ matrix.android }}
       TRAVIS_TAG: ${{ github.event.inputs.tags }}
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
