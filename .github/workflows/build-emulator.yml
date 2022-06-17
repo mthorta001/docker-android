@@ -8,9 +8,6 @@ on:
         required: true
         default: ''
 
-env:
-  DEFAULT_CAPABILITIES: '{"skipDeviceInitialization": true}'
-
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -168,7 +168,7 @@ def appium_run(avd_name: str):
     if relaxed_security:
         cmd += ' --relaxed-security'
     if default_capabilities:
-        cmd += ' --default-capabilities ' + default_capabilities
+        cmd += " --default-capabilities '{default_capabilities}'".format(default_capabilities=default_capabilities)
 
     default_web_browser = os.getenv('BROWSER')
     cmd += ' --chromedriver-executable {driver}'.format(driver=CHROME_DRIVER)

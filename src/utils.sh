@@ -118,7 +118,7 @@ function handle_not_responding() {
   if [ "$not_responding" ]; then
     adb shell input tap 540 1059
     echo "current screen is $not_responding ,tap Wait"
-    botman $HOST_IP $UDID not responding, tap Wait
+    botman $HOST_IP:$TARGET_PORT $UDID not responding, tap Wait
   fi
 }
 
