@@ -157,7 +157,7 @@ def appium_run(avd_name: str):
     :param avd_name: Name of android virtual device / emulator
     """
     appium_port = int(os.getenv('APPIUM_PORT', 4723))
-    default_capabilities = os.getenv("DEFAULT_CAPABILITIES", {})
+    default_capabilities = os.getenv('DEFAULT_CAPABILITIES', '')
     DEFAULT_LOG_PATH = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
 
     cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override'\
