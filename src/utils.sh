@@ -151,7 +151,7 @@ function botman_team() {
     curl -X POST "https://botman.lab.nordigy.ru/v2/team/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
-    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d':' -f4 <<<$HOST_IP)\", \"message\": \"$TIME  $*\" }"
+    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$TIME  $*\" }"
 }
 
 TIME=$(date "+%F %T")
