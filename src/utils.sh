@@ -107,8 +107,8 @@ EOF
 
 # disable chrome first open welcome screen
 function disable_chrome_accept_continue() {
-  echo "disable chrome first open welcome screen"
   adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line'
+  echo "$TIME disable chrome first open welcome screen"
 }
 
 # close System UI isn't responding when start
@@ -117,8 +117,8 @@ function handle_not_responding() {
   not_responding=$(adb shell dumpsys window windows | grep 'Not Responding')
   if [ "$not_responding" ]; then
     adb shell input tap 540 1059
-    echo "current screen is $not_responding ,tap Wait"
-    botman $HOST_IP:$TARGET_PORT $UDID not responding, tap Wait
+    echo "$TIME current screen is $not_responding ,tap Wait"
+    botman_team $HOST_IP:$TARGET_PORT $UDID not responding, tap Wait
   fi
 }
 
@@ -126,24 +126,36 @@ function handle_not_responding() {
 # refer to:
 # https://www.headspin.io/blog/special-capabilities-for-speeding-up-android-test-initialization?utm_source=gold_browser_extension
 # https://discuss.appium.io/t/appium-settings-app-is-not-running-after-5000ms/36218/6
+APPIUM_SETTINGS_PATH=/usr/lib/node_modules/appium/node_modules/io.appium.settings/apks/settings_apk-debug.apk
+UIAUTOMATOR2_PATH=$(ls /usr/lib/node_modules/appium/node_modules/appium-uiautomator2-server/apks/appium-uiautomator2-server-v*.apk)
 function adb_install() {
-  adb install /usr/lib/node_modules/appium/node_modules/io.appium.settings/apks/settings_apk-debug.apk
-  echo "adb install appium settings app"
   [[ $(adb shell pm list packages io.appium.settings) ]] ||
-    adb install /usr/lib/node_modules/appium/node_modules/io.appium.settings/apks/settings_apk-debug.apk
-    echo "adb install appium settings app again"
+    adb install $APPIUM_SETTINGS_PATH
+    echo "$TIME adb install appium settings app $APPIUM_SETTINGS_PATH"
+    botman_team $HOST_IP:$TARGET_PORT $UDID adb install appium settings app
+  [[ $(adb shell pm list packages io.appium.uiautomator2.server) ]] ||
+    adb install $UIAUTOMATOR2_PATH
+    echo "$TIME adb install uiautomator2 app $UIAUTOMATOR2_PATH"
+    botman_team $HOST_IP:$TARGET_PORT $UDID adb install uiautomator2 app
 }
 
 TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
-function botman() {
-  TIME=$(date "+%F %T")
+function botman_user() {
   curl -X POST "https://botman.lab.nordigy.ru/v2/user/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
     -d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$TIME  $*\" }"
 }
 
-botman $HOST_IP start emulator: emulator$APPIUM_PORT
+function botman_team() {
+    curl -X POST "https://botman.lab.nordigy.ru/v2/team/message" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "content-type: application/json" \
+    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d':' -f4 <<<$HOST_IP)\", \"message\": \"$TIME  $*\" }"
+}
+
+TIME=$(date "+%F %T")
+botman_team start emulator: $HOST_IP:$TARGET_PORT $UDID
 change_language_if_needed
 sleep 1
 enable_proxy_if_needed
@@ -156,5 +168,6 @@ adb_install
 sleep 1
 while true; do
   handle_not_responding
+  adb_install
   sleep 10
 done
