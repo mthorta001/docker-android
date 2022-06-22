@@ -132,12 +132,10 @@ function adb_install() {
   if [[ -z $(adb shell pm list packages io.appium.settings) ]]; then
     adb install $APPIUM_SETTINGS_PATH
     echo "$(date "+%F %T") adb install appium settings app $APPIUM_SETTINGS_PATH"
-    botman_team $HOST_IP:$TARGET_PORT $UDID adb install appium settings app
   fi
   if [[ -z $(adb shell pm list packages io.appium.uiautomator2.server) ]]; then
     adb install $UIAUTOMATOR2_PATH
     echo "$(date "+%F %T") adb install uiautomator2 app $UIAUTOMATOR2_PATH"
-    botman_team $HOST_IP:$TARGET_PORT $UDID adb install uiautomator2 app
   fi
 }
 
@@ -167,6 +165,7 @@ disable_chrome_accept_continue
 sleep 1
 adb_install
 sleep 1
+echo "$(date "+%F %T") start checking..."
 while true; do
   handle_not_responding
   adb_install
