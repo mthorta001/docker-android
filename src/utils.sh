@@ -133,10 +133,10 @@ function adb_install() {
     adb install $APPIUM_SETTINGS_PATH
     echo "$(date "+%F %T") adb install appium settings app $APPIUM_SETTINGS_PATH"
   fi
-  if [[ -z $(adb shell pm list packages io.appium.uiautomator2.server) ]]; then
-    adb install $UIAUTOMATOR2_PATH
-    echo "$(date "+%F %T") adb install uiautomator2 app $UIAUTOMATOR2_PATH"
-  fi
+#  if [[ -z $(adb shell pm list packages io.appium.uiautomator2.server) ]]; then
+#    adb install $UIAUTOMATOR2_PATH
+#    echo "$(date "+%F %T") adb install uiautomator2 app $UIAUTOMATOR2_PATH"
+#  fi
 }
 
 TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
