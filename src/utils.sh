@@ -122,6 +122,19 @@ function handle_not_responding() {
   fi
 }
 
+function check_wifi() {
+    WLAN=$(adb -s $UDID shell ifconfig wlan0)
+    PORT=$(cut -d'-' -f2 <<<$UDID)
+    if [[ $WLAN != *"inet addr"* ]]; then
+      pkill -f "qemu-system-x86_64"
+      echo "kill emulator"
+      emulator/emulator @$AVD_NAME -port $UDID -timezone Asia/Shanghai \
+              -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &
+      echo "emulator/emulator @$AVD_NAME -port $UDID -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &"
+      botman_team $HOST_IP:$TARGET_PORT $UDID no wifi, recreate emulator
+    fi
+}
+
 # install appium settings app
 # refer to:
 # https://www.headspin.io/blog/special-capabilities-for-speeding-up-android-test-initialization?utm_source=gold_browser_extension
@@ -168,6 +181,7 @@ sleep 1
 echo "$(date "+%F %T") start checking..."
 while true; do
   handle_not_responding
+  check_wifi
   adb_install
   sleep 10
 done
