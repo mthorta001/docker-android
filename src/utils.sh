@@ -170,10 +170,11 @@ function botman_team() {
 }
 
 botman_team start emulator: $HOST_IP:$TARGET_PORT $UDID
-change_language_if_needed
-sleep 1
-enable_proxy_if_needed
-sleep 1
+wait_emulator_to_be_ready
+#change_language_if_needed
+#sleep 1
+#enable_proxy_if_needed
+#sleep 1
 register_capability
 sleep 1
 disable_chrome_accept_continue
