@@ -125,7 +125,9 @@ function handle_not_responding() {
 function check_wifi() {
     WLAN=$(adb -s $UDID shell ifconfig wlan0)
     PORT=$(cut -d'-' -f2 <<<$UDID)
-    if [[ $WLAN != *"inet addr"* ]]; then
+    ADB_DEVICE=$(adb devices)
+    if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" && $WLAN != *"inet addr"* ]]; then
+      echo "$ADB_DEVICE"
       pkill -f "qemu-system-x86_64"
       echo "kill emulator"
       emulator/emulator @$AVD_NAME -port $UDID -timezone Asia/Shanghai \
