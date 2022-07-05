@@ -129,6 +129,10 @@ function check_wifi() {
     if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" && $WLAN != *"inet addr"* ]]; then
       echo "$ADB_DEVICE"
       pkill -f "qemu-system-x86_64"
+      # to have enough time emulator killed
+      while [[ $(adb devices) == *"$UDID"* ]]; do
+          sleep 2
+      done
       echo "kill emulator"
       emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai \
               -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &
