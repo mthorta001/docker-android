@@ -273,10 +273,6 @@ def run():
         appium_run(avd_name)
     else:
         result = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()
-    # sleep 2 minutes wait emulator loading
-    logger.info('Start sleep: {current_time}'.format(current_time=time.ctime()))
-    time.sleep(240)
-    logger.info('Wake up: {current_time}'.format(current_time=time.ctime()))
 
 
 if __name__ == '__main__':
