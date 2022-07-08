@@ -8,6 +8,7 @@ function wait_emulator_to_be_ready() {
 
     if [ "$status" == "1" ]; then
       boot_completed=true
+      sleep 5
     else
       sleep 1
     fi
@@ -123,11 +124,12 @@ function handle_not_responding() {
 }
 
 function check_wifi() {
-    WLAN=$(adb -s $UDID shell ifconfig wlan0)
+    WLAN=$(adb -s $UDID shell dumpsys connectivity | grep "Current state" -A 1)
     PORT=$(cut -d'-' -f2 <<<$UDID)
     ADB_DEVICE=$(adb devices)
-    if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" && $WLAN != *"inet addr"* ]]; then
+    if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" && $WLAN != *"WIFI"* ]]; then
       echo "$ADB_DEVICE"
+      echo "$WLAN"
       pkill -f "qemu-system-x86_64"
       # to have enough time emulator killed
       while [[ $(adb devices) == *"$UDID"* ]]; do
