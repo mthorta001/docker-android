@@ -21,6 +21,7 @@ else
     RELEASE=$3
 fi
 
+# https://apilevels.com/
 declare -A list_of_levels=(
         [5.0.1]=21
         [5.1.1]=22
@@ -33,6 +34,7 @@ declare -A list_of_levels=(
         [10.0]=29
         [11.0]=30
         [12.0]=31
+        [13.0]=33
 )
 
 # The version of the Chrome browser installed on the Android emulator needs to be known beforehand
@@ -49,6 +51,7 @@ declare -A chromedriver_versions=(
         [10.0]="74.0.3729.6"
         [11.0]="83.0.4103.39"
         [12.0]="92.0.4515.43"
+        [13.0]="104.0.5112.29"
 )
 
 function get_android_versions() {
@@ -151,7 +154,7 @@ function build() {
             # It is because there is no ARM EABI v7a System Image for 6.0
             IMG_TYPE=google_apis
             BROWSER=browser
-        elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ] || [ "$v" == "11.0" ]; then
+        elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ] || [ "$v" == "11.0" ] || [ "$v" == "13.0" ]; then
             IMG_TYPE=google_apis
             sys_img=x86_64
             BROWSER=chrome
