@@ -8,7 +8,7 @@ function wait_emulator_to_be_ready() {
 
     if [ "$status" == "1" ]; then
       boot_completed=true
-      sleep 5
+      sleep 10
     else
       sleep 1
     fi
@@ -127,20 +127,30 @@ function check_wifi() {
     WLAN=$(adb -s $UDID shell dumpsys connectivity | grep "Current state" -A 1)
     PORT=$(cut -d'-' -f2 <<<$UDID)
     ADB_DEVICE=$(adb devices)
-    if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" && $WLAN != *"WIFI"* ]]; then
+    if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" ]]; then
       echo "$ADB_DEVICE"
-      echo "$WLAN"
-      pkill -f "qemu-system-x86_64"
-      # to have enough time emulator killed
-      while [[ $(adb devices) == *"$UDID"* ]]; do
-          sleep 2
+
+      # take 1 min to wait emulator load wifi module
+      RETRY=0
+      while [[ $RETRY -lt 6 && $WLAN != *"WIFI"* ]]; do
+          sleep 10
+          # https://github.com/koalaman/shellcheck/wiki/SC2219
+          (( RETRY+=1 )) || true
       done
-      echo "kill emulator"
-      emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai \
+
+      if [[ $WLAN != *"WIFI"* ]]; then
+          echo "$WLAN"
+          pkill -f "qemu-system-x86_64"
+          echo "kill emulator $UDID"
+          # to have enough time emulator killed
+          while [[ $(adb devices) == *"$UDID"* ]]; do
+              sleep 2
+          done
+          emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai \
               -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &
-      echo "emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &"
-      botman_team $HOST_IP:$TARGET_PORT $UDID no wifi, recreate emulator
-      wait_emulator_to_be_ready
+          echo "emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &"
+          botman_team $HOST_IP:$TARGET_PORT $UDID no wifi, recreate emulator
+      fi
     fi
 }
 
