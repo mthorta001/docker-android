@@ -108,7 +108,9 @@ EOF
 
 # disable chrome first open welcome screen
 function disable_chrome_accept_continue() {
+  adb shell am set-debug-app --persistent com.android.chrome
   adb shell 'echo "chrome --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line'
+  adb shell am start -n com.android.chrome/com.google.android.apps.chrome.Main
   echo "$(date "+%F %T") disable chrome first open welcome screen"
 }
 
@@ -128,17 +130,17 @@ function check_wifi() {
     PORT=$(cut -d'-' -f2 <<<$UDID)
     ADB_DEVICE=$(adb devices)
     if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" ]]; then
-      echo "$ADB_DEVICE"
-
       # take 1 min to wait emulator load wifi module
       RETRY=0
       while [[ $RETRY -lt 6 && $WLAN != *"WIFI"* ]]; do
           sleep 10
           # https://github.com/koalaman/shellcheck/wiki/SC2219
           (( RETRY+=1 )) || true
+          echo "check wifi, wait $RETRY times..."
       done
 
       if [[ $WLAN != *"WIFI"* ]]; then
+          echo "$ADB_DEVICE"
           echo "$WLAN"
           pkill -f "qemu-system-x86_64"
           echo "kill emulator $UDID"
