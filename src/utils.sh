@@ -106,6 +106,7 @@ EOF
     )"
 }
 
+# https://stackoverflow.com/questions/60444428/android-skip-chrome-welcome-screen-using-adb
 # disable chrome first open welcome screen
 function disable_chrome_accept_continue() {
   adb shell am set-debug-app --persistent com.android.chrome
@@ -153,6 +154,7 @@ function check_wifi() {
           echo "emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &"
           botman_team $HOST_IP:$TARGET_PORT $UDID no wifi, recreate emulator
           wait_emulator_to_be_ready
+          disable_chrome_accept_continue
       fi
     fi
 }
