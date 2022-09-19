@@ -79,7 +79,7 @@ function get_android_versions() {
 }
 
 get_android_versions
-processor=x86
+processor=arm64-v8a
 
 function test() {
     # Prepare needed parameter to run tests
@@ -156,7 +156,7 @@ function build() {
             BROWSER=browser
         elif [ "$v" == "9.0" ] || [ "$v" == "12.0" ] || [ "$v" == "11.0" ] || [ "$v" == "13.0" ]; then
             IMG_TYPE=google_apis
-            sys_img=x86_64
+            sys_img=arm64-v8a
             BROWSER=chrome
         elif [ "$v" == "" ]; then
             IMG_TYPE=google_apis
@@ -176,8 +176,8 @@ function build() {
         echo "[BUILD] API Level: $level"
         chrome_driver="${chromedriver_versions[$v]}"
         echo "[BUILD] chromedriver version: $chrome_driver"
-        image_version="$IMAGE-x86-$v:$RELEASE"
-        image_latest="$IMAGE-x86-$v:latest"
+        image_version="$IMAGE-arm8-$v:$RELEASE"
+        image_latest="$IMAGE-arm8-$v:latest"
         echo "[BUILD] Image name: $image_version and $image_latest"
         echo "[BUILD] Dockerfile: $FILE_NAME"
         docker build -t $image_version --build-arg TOKEN=$TOKEN --build-arg ANDROID_VERSION=$v --build-arg API_LEVEL=$level \
@@ -191,8 +191,8 @@ function build() {
 function push() {
     # Push docker image(s)
     for v in "${versions[@]}"; do
-        image_version="$IMAGE-x86-$v:$RELEASE"
-        image_latest="$IMAGE-x86-$v:latest"
+        image_version="$IMAGE-arm8-$v:$RELEASE"
+        image_latest="$IMAGE-arm8-$v:latest"
         echo "[PUSH] Image name: $image_version and $image_latest"
         docker push $image_version
         docker push $image_latest
