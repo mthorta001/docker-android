@@ -69,6 +69,30 @@ function enable_proxy_if_needed() {
   fi
 }
 
+MTHOR_HOST=http://aqa01-i01-xta02.lab.nordigy.ru:10000
+MTHOR_LOCK_DEVICE=$MTHOR_HOST/api/v1/device-locks
+MTHOR_UNLOCK_DEVICE=$MTHOR_HOST/api/v1/device-locks/$UDID
+function lock_device() {
+    echo "lock device: $UDID 2 minutes"
+    curl \
+      -H "accept: application/json" \
+      -H "content-type: application/json" \
+      -X POST "$MTHOR_LOCK_DEVICE" \
+      -d "
+    {
+        \"udid\": \"$UDID\",
+        \"timeout\": 10
+    }"
+}
+
+function unlock_device() {
+    echo "unlock device: $UDID"
+    curl \
+      -H "accept: application/json" \
+      -H "content-type: application/json" \
+      -X DELETE "$MTHOR_UNLOCK_DEVICE"
+}
+
 # register capability
 function register_capability() {
   echo "register capability of container: emulator$APPIUM_PORT"
@@ -131,9 +155,9 @@ function check_wifi() {
     PORT=$(cut -d'-' -f2 <<<$UDID)
     ADB_DEVICE=$(adb devices)
     if [[ $ADB_DEVICE == *"$UDID"* && $ADB_DEVICE == *"device" ]]; then
-      # take 1 min to wait emulator load wifi module
+      # take 2 min to wait emulator load wifi module
       RETRY=0
-      while [[ $RETRY -lt 6 && $WLAN != *"WIFI"* ]]; do
+      while [[ $RETRY -lt 12 && $WLAN != *"WIFI"* ]]; do
           sleep 10
           # https://github.com/koalaman/shellcheck/wiki/SC2219
           (( RETRY+=1 )) || true
@@ -143,8 +167,15 @@ function check_wifi() {
       if [[ $WLAN != *"WIFI"* ]]; then
           echo "$ADB_DEVICE"
           echo "$WLAN"
+          while [ $(curl --request GET -sL \
+           --url "http://$HOST_IP:$APPIUM_PORT/wd/hub/sessions" | jq -c '.value[0].id') != 'null' ]; do
+             echo "session id: $(curl --request GET -sL \
+                --url "http://$HOST_IP:$APPIUM_PORT/wd/hub/sessions" | jq -c '.value[0].id'), sleep 2s..."
+              sleep 2
+          done
           pkill -f "qemu-system-x86_64"
           echo "kill emulator $UDID"
+          lock_device
           # to have enough time emulator killed
           while [[ $(adb devices) == *"$UDID"* ]]; do
               sleep 2
@@ -154,6 +185,7 @@ function check_wifi() {
           echo "emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &"
           botman_team $HOST_IP:$TARGET_PORT $UDID no wifi, recreate emulator
           wait_emulator_to_be_ready
+          unlock_device
           disable_chrome_accept_continue
       fi
     fi
