@@ -238,7 +238,10 @@ sleep 1
 echo "$(date "+%F %T") start checking..."
 while true; do
   handle_not_responding
-  check_wifi
+
+  # wifi monitor has implement on mthor code
+  # after case failed
+#  check_wifi
   adb_install
   sleep 10
 done
