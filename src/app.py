@@ -160,10 +160,11 @@ def appium_run(avd_name: str):
     default_capabilities = os.getenv('DEFAULT_CAPABILITIES', '')
     DEFAULT_LOG_PATH = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
 
-    cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override'\
+    cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override ' \
+          '--base-path /wd/hub --use-plugins=relaxed-caps,images' \
         .format(log=os.getenv('APPIUM_LOG', DEFAULT_LOG_PATH), appium_port=appium_port)
 
-    relaxed_security = convert_str_to_bool(str(os.getenv('RELAXED_SECURITY', False)))
+    relaxed_security = convert_str_to_bool(str(os.getenv('RELAXED_SECURITY', True)))
     logger.info('Relaxed security? {rs}'.format(rs=relaxed_security))
     if relaxed_security:
         cmd += ' --relaxed-security'
@@ -259,15 +260,16 @@ def run():
 
     if is_first_run:
         logger.info('Emulator was not previously initialized. Preparing a new one...')
-        port = os.getenv('UDID').replace('emulator-','')
-        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect ' \
-              '-accel on -wipe-data -writable-system -dns-server 10.32.51.10,10.32.51.55 -verbose {' \
-              'custom_args}'.format(name=avd_name, port=port, custom_args=custom_args)
+        port = os.getenv('UDID').replace('emulator-', '')
+        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
+              '-accel on -wipe-data -writable-system -dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
+            .format(name=avd_name, port=port, custom_args=custom_args)
     else:
         logger.info('Using previously initialized AVD...')
-        port = os.getenv('UDID').replace('emulator-','')
-        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect ' \
-              '-accel on -verbose -writable-system -dns-server 10.32.51.10,10.32.51.55 {custom_args}'.format(name=avd_name, port=port, custom_args=custom_args)
+        port = os.getenv('UDID').replace('emulator-', '')
+        cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
+              '-accel on -verbose -writable-system -dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
+            .format(name=avd_name, port=port, custom_args=custom_args)
 
     appium = convert_str_to_bool(str(os.getenv('APPIUM', False)))
     if appium:
