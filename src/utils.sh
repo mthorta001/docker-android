@@ -210,14 +210,14 @@ function adb_install() {
 
 TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
 function botman_user() {
-  curl -X POST "https://botman.lab.nordigy.ru/v2/user/message" \
+  curl -X POST "https://botman.int.rclabenv.com/v2/user/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
     -d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$TIME  $*\" }"
 }
 
 function botman_team() {
-    curl -X POST "https://botman.lab.nordigy.ru/v2/team/message" \
+    curl -X POST "https://botman.int.rclabenv.com/v2/team/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
     -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$TIME  $*\" }"
