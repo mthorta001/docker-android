@@ -195,8 +195,8 @@ function check_wifi() {
 # refer to:
 # https://www.headspin.io/blog/special-capabilities-for-speeding-up-android-test-initialization?utm_source=gold_browser_extension
 # https://discuss.appium.io/t/appium-settings-app-is-not-running-after-5000ms/36218/6
-APPIUM_SETTINGS_PATH=/usr/lib/node_modules/appium/node_modules/io.appium.settings/apks/settings_apk-debug.apk
-UIAUTOMATOR2_PATH=$(ls /usr/lib/node_modules/appium/node_modules/appium-uiautomator2-server/apks/appium-uiautomator2-server-v*.apk)
+APPIUM_SETTINGS_PATH=/root/.appium/node_modules/appium-uiautomator2-driver/node_modules/io.appium.settings/apks/settings_apk-debug.apk
+UIAUTOMATOR2_PATH=$(ls /root/.appium/node_modules/appium-uiautomator2-driver/node_modules/appium-uiautomator2-server/apks/appium-uiautomator2-server-v*.apk)
 function adb_install() {
   if [[ -z $(adb shell pm list packages io.appium.settings) ]]; then
     adb install $APPIUM_SETTINGS_PATH
