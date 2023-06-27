@@ -35,6 +35,7 @@ declare -A list_of_levels=(
         [11.0]=30
         [12.0]=31
         [13.0]=33
+        [14.0]=34
 )
 
 # The version of the Chrome browser installed on the Android emulator needs to be known beforehand
