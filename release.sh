@@ -80,7 +80,7 @@ function get_android_versions() {
 }
 
 get_android_versions
-processor=x86
+processor=x86_64
 
 function test() {
     # Prepare needed parameter to run tests
