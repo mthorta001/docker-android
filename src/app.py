@@ -113,10 +113,12 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
 
     skin_path = '/'.join([ANDROID_HOME, 'devices', 'skins', skin_name])
     config_path = '/'.join([avd_path, 'config.ini'])
+    ram_size = os.getenv('RAM', '8192m')
     with open(config_path, 'a') as file:
         file.write('skin.path={sp}'.format(sp=skin_path))
         logger.info('Skin was added in config.ini')
         file.write('\ndisk.dataPartition.size={dp}'.format(dp=dp_size))
+        file.write('\nhw.ramSize={ram}'.format(ram=ram_size))
         file.write('\nhw.audioOutput=no')
         # file.write('\nhw.gsmModem=no')
         file.write('\nhw.sensors.light=no')
@@ -263,14 +265,14 @@ def run():
         logger.info('Emulator was not previously initialized. Preparing a new one...')
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
-              '-accel on -wipe-data -writable-system -memory 4096 -partition-size 16384 ' \
+              '-accel on -wipe-data -writable-system -memory 8192 -partition-size 16384 ' \
               '-dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
             .format(name=avd_name, port=port, custom_args=custom_args)
     else:
         logger.info('Using previously initialized AVD...')
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
-              '-accel on -verbose -writable-system -memory 4096 -partition-size 16384 ' \
+              '-accel on -verbose -writable-system -memory 8192 -partition-size 16384 ' \
               '-dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
             .format(name=avd_name, port=port, custom_args=custom_args)
 
