@@ -263,13 +263,15 @@ def run():
         logger.info('Emulator was not previously initialized. Preparing a new one...')
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
-              '-accel on -wipe-data -writable-system -dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
+              '-accel on -wipe-data -writable-system -memory 4096 -partition-size 16384 ' \
+              '-dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
             .format(name=avd_name, port=port, custom_args=custom_args)
     else:
         logger.info('Using previously initialized AVD...')
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
-              '-accel on -verbose -writable-system -dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
+              '-accel on -verbose -writable-system -memory 4096 -partition-size 16384 ' \
+              '-dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
             .format(name=avd_name, port=port, custom_args=custom_args)
 
     appium = convert_str_to_bool(str(os.getenv('APPIUM', False)))
