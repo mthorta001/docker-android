@@ -254,6 +254,7 @@ def run():
     is_first_run = not is_initialized(device)
 
     dp_size = os.getenv('DATAPARTITION', '550m')
+    memory = os.getenv('RAM', '8192')
 
     if is_first_run:
         logger.info('Preparing emulator...')
@@ -265,16 +266,16 @@ def run():
         logger.info('Emulator was not previously initialized. Preparing a new one...')
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
-              '-accel on -wipe-data -writable-system -memory 8192 -partition-size 16384 ' \
+              '-accel on -wipe-data -writable-system -memory {memory} -partition-size {dp_size} ' \
               '-dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
-            .format(name=avd_name, port=port, custom_args=custom_args)
+            .format(name=avd_name, port=port, memory=memory, dp_size=dp_size, custom_args=custom_args)
     else:
         logger.info('Using previously initialized AVD...')
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
-              '-accel on -verbose -writable-system -memory 8192 -partition-size 16384 ' \
+              '-accel on -verbose -writable-system -memory {memory} -partition-size {dp_size} ' \
               '-dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
-            .format(name=avd_name, port=port, custom_args=custom_args)
+            .format(name=avd_name, port=port, memory=memory, dp_size=dp_size, custom_args=custom_args)
 
     appium = convert_str_to_bool(str(os.getenv('APPIUM', False)))
     if appium:
