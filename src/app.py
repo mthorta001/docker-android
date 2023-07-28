@@ -253,7 +253,7 @@ def run():
     logger.info('AVD name: {avd}'.format(avd=avd_name))
     is_first_run = not is_initialized(device)
 
-    dp_size = os.getenv('DATAPARTITION', '550m')
+    dp_size = os.getenv('DATAPARTITION', '16384')
     memory = os.getenv('RAM', '8192')
 
     if is_first_run:
