@@ -269,6 +269,7 @@ def run():
               '-accel on -wipe-data -writable-system -memory {memory} -partition-size {dp_size} ' \
               '-dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
             .format(name=avd_name, port=port, memory=memory, dp_size=dp_size, custom_args=custom_args)
+        logger.info('command: {cmd}'.format(cmd=cmd))
     else:
         logger.info('Using previously initialized AVD...')
         port = os.getenv('UDID').replace('emulator-', '')
@@ -276,6 +277,7 @@ def run():
               '-accel on -verbose -writable-system -memory {memory} -partition-size {dp_size} ' \
               '-dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
             .format(name=avd_name, port=port, memory=memory, dp_size=dp_size, custom_args=custom_args)
+        logger.info('command: {cmd}'.format(cmd=cmd))
 
     appium = convert_str_to_bool(str(os.getenv('APPIUM', False)))
     if appium:
