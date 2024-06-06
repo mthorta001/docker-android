@@ -223,6 +223,10 @@ function botman_team() {
     -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$TIME  $*\" }"
 }
 
+function replaceNoVncPython() {
+    sed -i 's/python/python3/g' /root/noVNC/utils/websockify/run
+}
+
 botman_team start emulator: $HOST_IP:$TARGET_PORT $UDID
 wait_emulator_to_be_ready
 #change_language_if_needed
@@ -235,6 +239,8 @@ disable_chrome_accept_continue
 sleep 1
 adb_install
 sleep 1
+replaceNoVncPython
+
 echo "$(date "+%F %T") start checking..."
 while true; do
   handle_not_responding
