@@ -75,8 +75,8 @@ RUN apt-get -qqy update && apt-get -qqy install --no-install-recommends \
     ffmpeg \
     jq \
     qemu-kvm \
-    libvirt-bin \
-    ubuntu-vm-builder \
+    libvirt-daemon-system \
+    libvirt-clients \
     bridge-utils \
  && apt clean all \
  && rm -rf /var/lib/apt/lists/*
