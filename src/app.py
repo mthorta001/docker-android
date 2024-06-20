@@ -267,7 +267,7 @@ def run():
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
               '-accel on -wipe-data -writable-system -memory {memory} -partition-size {dp_size} ' \
-              '-dns-server 10.74.32.10,10.74.32.11 -verbose {custom_args}'\
+              '-dns-server 10.32.51.10,10.32.51.12 -verbose {custom_args}'\
             .format(name=avd_name, port=port, memory=memory, dp_size=dp_size, custom_args=custom_args)
         logger.info('command: {cmd}'.format(cmd=cmd))
     else:
@@ -275,7 +275,7 @@ def run():
         port = os.getenv('UDID').replace('emulator-', '')
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
               '-accel on -verbose -writable-system -memory {memory} -partition-size {dp_size} ' \
-              '-dns-server 10.74.32.10,10.74.32.11 {custom_args}' \
+              '-dns-server 10.32.51.10,10.32.51.12 {custom_args}' \
             .format(name=avd_name, port=port, memory=memory, dp_size=dp_size, custom_args=custom_args)
         logger.info('command: {cmd}'.format(cmd=cmd))
 
