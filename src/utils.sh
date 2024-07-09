@@ -150,6 +150,32 @@ function back_appium_run() {
 }
 
 
+function check_appium_server_repeatedly() {
+  local retries=5
+  local interval=1
+  local attempts=0
+  local appium_port=$APPIUM_PORT2
+
+  while [ $attempts -lt $retries ]; do
+    local status=$(curl -s http://127.0.0.1:$appium_port/wd/hub/status)
+    echo "appium status: $status"
+    local response=$(echo $status | jq -r '.value.ready')
+
+    if [ "$response" = "true" ]; then
+      echo "Appium server is running on port $appium_port"
+      return 0
+    else
+      ((attempts++))
+      echo "Attempt $attempts: Appium server not running on port $appium_port, waiting $interval second..."
+      sleep $interval
+    fi
+  done
+
+  echo "Exceeded maximum retries. Appium server is not running on port $appium_port"
+  return 1
+}
+
+# Deprecated
 function check_appium_server() {
   local status=$(curl -s http://127.0.0.1:$APPIUM_PORT2/wd/hub/status)
   echo "appium status: $status"
@@ -165,7 +191,7 @@ function check_appium_server() {
 
 CHROME_NO_THANKS_BTN_ID="com.android.chrome:id/negative_button"
 function handle_chrome_alert() {
-  if ! check_appium_server; then
+  if ! check_appium_server_repeatedly; then
     echo "Appium server is not running. Exiting."
     return 1
   fi
