@@ -139,6 +139,44 @@ function disable_chrome_accept_continue() {
   echo "$(date "+%F %T") disable chrome first open welcome screen"
 }
 
+
+CHROME_NO_THANKS_BTN_ID="com.android.chrome:id/negative_button"
+function handle_chrome_alert() {
+  # get from env
+  SESSION_ID=$(curl -s -X POST http://127.0.0.1:${APPIUM_PORT2}/wd/hub/session -H "Content-Type: application/json" -d '{
+      "capabilities": {
+        "alwaysMatch": {
+          "platformName": "android",
+          "udid": "'"${UDID}"'",
+          "appPackage": "com.android.chrome",
+          "appActivity": "com.google.android.apps.chrome.Main",
+          "automationName": "UiAutomator2",
+          "newCommandTimeout": "120"
+        },
+        "firstMatch": [{}]
+      }
+    }' | jq -r '.sessionId')
+    echo "Session ID: $SESSION_ID"
+  
+  ELEMENT_ID="null"
+  for i in {1..10}; do
+    ELEMENT_ID=$(curl -s -X POST http://127.0.0.1:${APPIUM_PORT2}/wd/hub/session/$SESSION_ID/element -H "Content-Type: application/json" -d '{
+      "using": "id",
+      "value": "'"$CHROME_NO_THANKS_BTN_ID"'"
+      }' | jq -r '.value.ELEMENT')
+    if [ "$ELEMENT_ID" != "null" ]; then
+      echo "Element ID: $ELEMENT_ID"
+      curl -X POST http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID/element/$ELEMENT_ID/click -H "Content-Type: application/json"
+      echo "Button clicked"
+    else
+      echo "Element not found, retrying... ($i)"
+      sleep 2
+    fi
+  done
+  curl -s -X DELETE http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID
+  echo "Session closed"
+}
+
 # close System UI isn't responding when start
 # tap the coordinate of "Wait" button
 function handle_not_responding() {
@@ -240,6 +278,7 @@ sleep 1
 adb_install
 sleep 1
 replaceNoVncPython
+handle_chrome_alert
 
 echo "$(date "+%F %T") start checking..."
 while true; do
