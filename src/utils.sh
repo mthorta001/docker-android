@@ -139,9 +139,25 @@ function disable_chrome_accept_continue() {
   echo "$(date "+%F %T") disable chrome first open welcome screen"
 }
 
+function check_appium_server() {
+  local appium_port=$1
+  local response=$(curl -s http://127.0.0.1:$appium_port/wd/hub/status | grep -o '"value":"ready"')
+  if [ -n "$response" ]; then
+    echo "Appium server is running on port $appium_port"
+    return 0
+  else
+    echo "Appium server is not running on port $appium_port"
+    return 1
+  fi
+}
 
 CHROME_NO_THANKS_BTN_ID="com.android.chrome:id/negative_button"
 function handle_chrome_alert() {
+  if ! check_appium_server "$APPIUM_PORT2"; then
+    echo "Appium server is not running. Exiting."
+    return 1
+  fi
+
   # get from env
   SESSION_ID=$(curl -s -X POST http://127.0.0.1:${APPIUM_PORT2}/wd/hub/session -H "Content-Type: application/json" -d '{
       "capabilities": {
