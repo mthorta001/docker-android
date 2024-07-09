@@ -205,16 +205,16 @@ def back_appium_run():
     appium_port = int(os.getenv('APPIUM_PORT', 4723))
     appium_port2 = appium_port + 1
     os.environ['APPIUM_PORT2'] = str(appium_port2)
-    print(f"APPIUM_PORT2 set to: {os.getenv('APPIUM_PORT2')}")
+    logger.info(f"APPIUM_PORT2 set to: {os.getenv('APPIUM_PORT2')}")
     cmd = 'appium -p {appium_port} --relaxed-security --log-timestamp --local-timezone --session-override ' \
           '--base-path /wd/hub --use-plugins=relaxed-caps,images' \
         .format(appium_port=appium_port2)
     logger.info("appium2 command: {command}".format(command=cmd))
     try:
-        subprocess.check_call(cmd)
-        print("Command executed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error executing command: {e}")
+        subprocess.Popen(cmd)
+        logger.info("Command executed successfully.")
+    except Exception as e:
+        logger.error(f"Error executing command: {e}")
 
 
 def create_node_config(avd_name: str, browser_name: str, appium_host: str, appium_port: int, selenium_host: str,
@@ -301,8 +301,8 @@ def run():
     if appium:
         subprocess.Popen(cmd.split())
         logger.info('Run appium server...')
-        appium_run(avd_name)
         back_appium_run()
+        appium_run(avd_name)
     else:
         result = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()
 
