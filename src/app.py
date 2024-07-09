@@ -198,7 +198,7 @@ def appium_run(avd_name: str):
     title = 'Appium Server'
     subprocess.check_call('xterm -T "{title}" -n "{title}" -e \"{cmd}\"'.format(title=title, cmd=cmd), shell=True)
 
-
+# Deprecated
 def back_appium_run():
     """run this appium background to resolve some tasks
     """
@@ -301,7 +301,6 @@ def run():
     if appium:
         subprocess.Popen(cmd.split())
         logger.info('Run appium server...')
-        back_appium_run()
         appium_run(avd_name)
     else:
         result = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()

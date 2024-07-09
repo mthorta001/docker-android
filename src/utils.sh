@@ -139,21 +139,33 @@ function disable_chrome_accept_continue() {
   echo "$(date "+%F %T") disable chrome first open welcome screen"
 }
 
+function back_appium_run() {
+  ((APPIUM_PORT2 = $APPIUM_PORT + 1))
+  export APPIUM_PORT2=$APPIUM_PORT2
+  echo "APPIUM_PORT2 set to: $APPIUM_PORT2"
+  cmd="appium -p $APPIUM_PORT2 --relaxed-security --log-timestamp --local-timezone --session-override \
+        --base-path /wd/hub --use-plugins=relaxed-caps,images"
+  echo "appium2 command: $cmd"
+  nohup $cmd > /dev/null 2>&1 &
+}
+
+
 function check_appium_server() {
-  local appium_port=$1
-  local response=$(curl -s http://127.0.0.1:$appium_port/wd/hub/status | jq -r '.value.ready')
-  if [ -n "$response" ]; then
-    echo "Appium server is running on port $appium_port"
+  local status=$(curl -s http://127.0.0.1:$APPIUM_PORT2/wd/hub/status)
+  echo "appium status: $status"
+  local response=$(echo $status | jq -r '.value.ready')
+  if [ "$response" = "true" ]; then
+    echo "Appium server is running on port $APPIUM_PORT2"
     return 0
   else
-    echo "Appium server is not running on port $appium_port"
+    echo "Appium server is not running on port $APPIUM_PORT2"
     return 1
   fi
 }
 
 CHROME_NO_THANKS_BTN_ID="com.android.chrome:id/negative_button"
 function handle_chrome_alert() {
-  if ! check_appium_server "$APPIUM_PORT2"; then
+  if ! check_appium_server; then
     echo "Appium server is not running. Exiting."
     return 1
   fi
@@ -294,6 +306,9 @@ sleep 1
 adb_install
 sleep 1
 replaceNoVncPython
+sleep 1
+back_appium_run
+sleep 1
 handle_chrome_alert
 
 echo "$(date "+%F %T") start checking..."
