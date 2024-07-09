@@ -141,7 +141,7 @@ function disable_chrome_accept_continue() {
 
 function check_appium_server() {
   local appium_port=$1
-  local response=$(curl -s http://127.0.0.1:$appium_port/wd/hub/status | grep -o '"value":"ready"')
+  local response=$(curl -s http://127.0.0.1:$appium_port/wd/hub/status | jq -r '.value.ready')
   if [ -n "$response" ]; then
     echo "Appium server is running on port $appium_port"
     return 0
