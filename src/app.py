@@ -211,7 +211,7 @@ def back_appium_run():
         .format(appium_port=appium_port2)
     logger.info("appium2 command: {command}".format(command=cmd))
     try:
-        subprocess.Popen(cmd)
+        subprocess.Popen(cmd.split())
         logger.info("Command executed successfully.")
     except Exception as e:
         logger.error(f"Error executing command: {e}")
