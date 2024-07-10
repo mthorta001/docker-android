@@ -205,11 +205,11 @@ function handle_chrome_alert() {
           "appPackage": "com.android.chrome",
           "appActivity": "com.google.android.apps.chrome.Main",
           "automationName": "UiAutomator2",
-          "newCommandTimeout": "120"
+          "newCommandTimeout": "180"
         },
         "firstMatch": [{}]
       }
-    }' | jq -r '.sessionId')
+    }' | jq -r '.value.sessionId')
     echo "Session ID: $SESSION_ID"
   
   ELEMENT_ID="null"
