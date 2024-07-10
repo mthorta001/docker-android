@@ -145,14 +145,14 @@ function back_appium_run() {
   echo "APPIUM_PORT2 set to: $APPIUM_PORT2"
   cmd="appium -p $APPIUM_PORT2 --relaxed-security --log-timestamp --local-timezone --session-override \
         --base-path /wd/hub --use-plugins=relaxed-caps,images"
-  echo "appium2 command: $cmd"
+  echo "appium command: $cmd"
   nohup $cmd > /dev/null 2>&1 &
 }
 
 
 function check_appium_server_repeatedly() {
   local retries=5
-  local interval=1
+  local interval=2
   local attempts=0
   local appium_port=$APPIUM_PORT2
 
@@ -196,7 +196,6 @@ function handle_chrome_alert() {
     return 1
   fi
 
-  # get from env
   SESSION_ID=$(curl -s -X POST http://127.0.0.1:${APPIUM_PORT2}/wd/hub/session -H "Content-Type: application/json" -d '{
       "capabilities": {
         "alwaysMatch": {
@@ -222,6 +221,7 @@ function handle_chrome_alert() {
       echo "Element ID: $ELEMENT_ID"
       curl -X POST http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID/element/$ELEMENT_ID/click -H "Content-Type: application/json"
       echo "Button clicked"
+      break
     else
       echo "Element not found, retrying... ($i)"
       sleep 2
