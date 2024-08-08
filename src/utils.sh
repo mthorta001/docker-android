@@ -4,7 +4,7 @@ function wait_emulator_to_be_ready() {
   boot_completed=false
   while [ "$boot_completed" == false ]; do
     status=$(adb wait-for-device shell getprop sys.boot_completed | tr -d '\r')
-    echo "Boot Status: $status"
+    echo "$(date "+%F %T") Boot Status: $status"
 
     if [ "$status" == "1" ]; then
       boot_completed=true
@@ -95,8 +95,8 @@ function unlock_device() {
 
 # register capability
 function register_capability() {
-  echo "register capability of container: emulator$APPIUM_PORT"
-  curl \
+  echo "$(date "+%F %T") register capability of container: emulator$APPIUM_PORT"
+  response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
     -H "accept: application/json" \
     -H "content-type: application/json" \
     -X POST "$DEVICE_SPY" \
@@ -127,7 +127,15 @@ function register_capability() {
         ]
   }
 EOF
-    )"
+    )")
+  http_body=$(echo "$response" | sed -e 's/HTTP_STATUS\:.*//g')
+  http_status=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
+  echo "$(date "+%F %T") Response body: $http_body"
+  if [ "$http_status" -eq 200 ]; then
+    echo "$(date "+%F %T") Capability registration successful"
+  else
+    echo "$(date "+%F %T") Capability registration failed with status: $http_status"
+  fi
 }
 
 # https://stackoverflow.com/questions/60444428/android-skip-chrome-welcome-screen-using-adb
@@ -142,10 +150,10 @@ function disable_chrome_accept_continue() {
 function back_appium_run() {
   ((APPIUM_PORT2 = $APPIUM_PORT + 1))
   export APPIUM_PORT2=$APPIUM_PORT2
-  echo "APPIUM_PORT2 set to: $APPIUM_PORT2"
+  echo "$(date "+%F %T") APPIUM_PORT2 set to: $APPIUM_PORT2"
   cmd="appium -p $APPIUM_PORT2 --relaxed-security --log-timestamp --local-timezone --session-override \
         --base-path /wd/hub --use-plugins=relaxed-caps,images"
-  echo "appium command: $cmd"
+  echo "$(date "+%F %T") start a new appium with command:\n $cmd"
   nohup $cmd > /dev/null 2>&1 &
 }
 
@@ -158,33 +166,33 @@ function check_appium_server_repeatedly() {
 
   while [ $attempts -lt $retries ]; do
     local status=$(curl -s http://127.0.0.1:$appium_port/wd/hub/status)
-    echo "appium status: $status"
+    echo "$(date "+%F %T") appium status: $status"
     local response=$(echo $status | jq -r '.value.ready')
 
     if [ "$response" = "true" ]; then
-      echo "Appium server is running on port $appium_port"
+      echo "$(date "+%F %T") Appium server is running on port $appium_port"
       return 0
     else
       ((attempts++))
-      echo "Attempt $attempts: Appium server not running on port $appium_port, waiting $interval second..."
+      echo "$(date "+%F %T") Attempt $attempts: Appium server not running on port $appium_port, waiting $interval second..."
       sleep $interval
     fi
   done
 
-  echo "Exceeded maximum retries. Appium server is not running on port $appium_port"
+  echo "$(date "+%F %T") Exceeded maximum retries. Appium server is not running on port $appium_port"
   return 1
 }
 
 # Deprecated
 function check_appium_server() {
   local status=$(curl -s http://127.0.0.1:$APPIUM_PORT2/wd/hub/status)
-  echo "appium status: $status"
+  echo "$(date "+%F %T") appium status: $status"
   local response=$(echo $status | jq -r '.value.ready')
   if [ "$response" = "true" ]; then
-    echo "Appium server is running on port $APPIUM_PORT2"
+    echo "$(date "+%F %T") Appium server is running on port $APPIUM_PORT2"
     return 0
   else
-    echo "Appium server is not running on port $APPIUM_PORT2"
+    echo "$(date "+%F %T") Appium server is not running on port $APPIUM_PORT2"
     return 1
   fi
 }
@@ -192,7 +200,7 @@ function check_appium_server() {
 CHROME_NO_THANKS_BTN_ID="com.android.chrome:id/negative_button"
 function handle_chrome_alert() {
   if ! check_appium_server_repeatedly; then
-    echo "Appium server is not running. Exiting."
+    echo "$(date "+%F %T") Appium server is not running. Exiting."
     return 1
   fi
 
@@ -209,7 +217,7 @@ function handle_chrome_alert() {
         "firstMatch": [{}]
       }
     }' | jq -r '.value.sessionId')
-    echo "Session ID: $SESSION_ID"
+    echo "$(date "+%F %T") Session ID: $SESSION_ID"
   
   ELEMENT_ID="null"
   for i in {1..10}; do
@@ -218,9 +226,9 @@ function handle_chrome_alert() {
       "value": "'"$CHROME_NO_THANKS_BTN_ID"'"
       }' | jq -r '.value.ELEMENT')
     if [ "$ELEMENT_ID" != "null" ]; then
-      echo "Element ID: $ELEMENT_ID"
+      echo "$(date "+%F %T") Element ID: $ELEMENT_ID"
       curl -X POST http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID/element/$ELEMENT_ID/click -H "Content-Type: application/json"
-      echo "Button clicked"
+      echo "$(date "+%F %T") Button clicked"
       break
     else
       echo "Element not found, retrying... ($i)"
@@ -228,7 +236,7 @@ function handle_chrome_alert() {
     fi
   done
   curl -s -X DELETE http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID
-  echo "Session closed"
+  echo "$(date "+%F %T") Session closed"
 }
 
 # close System UI isn't responding when start
@@ -289,7 +297,7 @@ function check_wifi() {
 # https://discuss.appium.io/t/appium-settings-app-is-not-running-after-5000ms/36218/6
 APPIUM_SETTINGS_PATH=/root/.appium/node_modules/appium-uiautomator2-driver/node_modules/io.appium.settings/apks/settings_apk-debug.apk
 UIAUTOMATOR2_PATH=$(ls /root/.appium/node_modules/appium-uiautomator2-driver/node_modules/appium-uiautomator2-server/apks/appium-uiautomator2-server-v*.apk)
-function adb_install() {
+function adb_install_appium_settings() {
   if [[ -z $(adb shell pm list packages io.appium.settings) ]]; then
     adb install $APPIUM_SETTINGS_PATH
     echo "$(date "+%F %T") adb install appium settings app $APPIUM_SETTINGS_PATH"
@@ -298,6 +306,13 @@ function adb_install() {
 #    adb install $UIAUTOMATOR2_PATH
 #    echo "$(date "+%F %T") adb install uiautomator2 app $UIAUTOMATOR2_PATH"
 #  fi
+}
+
+function health_check_adb_devices() {
+  devices=$(adb devices | grep -w "device" | grep -v "List")
+  if [ -z "$devices" ]; then
+    echo "$(date "+%F %T") no devices connected"
+  fi
 }
 
 TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
@@ -329,7 +344,7 @@ register_capability
 sleep 1
 disable_chrome_accept_continue
 sleep 1
-adb_install
+adb_install_appium_settings
 sleep 1
 replaceNoVncPython
 sleep 1
@@ -339,11 +354,12 @@ handle_chrome_alert
 
 echo "$(date "+%F %T") start checking..."
 while true; do
+  health_check_adb_devices
   handle_not_responding
 
   # wifi monitor has implement on mthor code
   # after case failed
 #  check_wifi
-  adb_install
+  adb_install_appium_settings
   sleep 10
 done
