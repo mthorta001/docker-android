@@ -312,6 +312,9 @@ function health_check_adb_devices() {
   devices=$(adb devices | grep -w "device" | grep -v "List")
   if [ -z "$devices" ]; then
     echo "$(date "+%F %T") no devices connected"
+    return 1
+  else 
+    return 0
   fi
 }
 
@@ -352,14 +355,23 @@ back_appium_run
 sleep 1
 handle_chrome_alert
 
-echo "$(date "+%F %T") start checking..."
+echo "$(date "+%F %T") start while checking..."
+no_device_count=0
+max_no_device_count=360
 while true; do
-  health_check_adb_devices
-  handle_not_responding
+  if health_check_adb_devices; then
+    handle_not_responding
 
   # wifi monitor has implement on mthor code
   # after case failed
-#  check_wifi
-  adb_install_appium_settings
+  # check_wifi
+    adb_install_appium_settings
+  else
+    no_device_count=$((no_device_count + 1))
+    if [ "$no_device_count" -ge "$max_no_device_count" ]; then
+      echo "$(date "+%F %T") No devices connected for $max_no_device_count cycles. Exiting."
+      break
+    fi
   sleep 10
+  echo "$(date "+%F %T") sleep 10s"
 done
