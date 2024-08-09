@@ -372,6 +372,7 @@ while true; do
       echo "$(date "+%F %T") No devices connected for $max_no_device_count cycles. Exiting."
       break
     fi
+  fi
   sleep 10
   echo "$(date "+%F %T") sleep 10s"
 done
