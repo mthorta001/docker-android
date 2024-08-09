@@ -358,11 +358,7 @@ handle_chrome_alert
 echo "$(date "+%F %T") start while checking..."
 no_device_count=0
 max_no_device_count=360
-check_count=0
 while true; do
-  check_count=$((check_count + 1))
-  echo "$(date "+%F %T") Check #$check_count times"
-
   if health_check_adb_devices; then
     handle_not_responding
 
@@ -378,5 +374,4 @@ while true; do
     fi
   fi
   sleep 10
-  echo "$(date "+%F %T") sleep 10s"
 done
