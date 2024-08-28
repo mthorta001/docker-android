@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DATETIME=$(date "+%F %T")
+
 function wait_emulator_to_be_ready() {
   boot_completed=false
   while [ "$boot_completed" == false ]; do
@@ -309,13 +311,25 @@ function adb_install_appium_settings() {
 }
 
 function health_check_adb_devices() {
+  adb_devices=$(adb devices)
   devices=$(adb devices | grep -w "device" | grep -v "List")
   if [ -z "$devices" ]; then
-    echo "$(date "+%F %T") no devices connected"
+    echo "$(date "+%F %T") no devices connected ==> $adb_devices"
     return 1
   else 
     return 0
   fi
+}
+
+DEVICE_SPY_EXEC_CMD=http://aqa01-i01-xta02.lab.nordigy.ru:10000/api/v1/hosts/exec_cmd
+function exec_remote_cmd() {
+  local hostname=$1
+  local command=$2
+  local timeout=${3:-60}
+  curl -X POST "$DEVICE_SPY_EXEC_CMD" \
+    -H "accept: application/json" \
+    -H "content-type: application/json" \
+    -d "{\"hostname\": \"$hostname\", \"cmd\": \"$command\", \"timeout\": $timeout}"
 }
 
 TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
@@ -323,14 +337,14 @@ function botman_user() {
   curl -X POST "https://botman.int.rclabenv.com/v2/user/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
-    -d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$TIME  $*\" }"
+    -d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$DATETIME  $*\" }"
 }
 
 function botman_team() {
     curl -X POST "https://botman.int.rclabenv.com/v2/team/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
-    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$TIME  $*\" }"
+    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$DATETIME  $*\" }"
 }
 
 function replaceNoVncPython() {
@@ -357,7 +371,7 @@ handle_chrome_alert
 
 echo "$(date "+%F %T") start while checking..."
 no_device_count=0
-max_no_device_count=360
+max_no_device_count=5
 while true; do
   if health_check_adb_devices; then
     handle_not_responding
@@ -370,6 +384,10 @@ while true; do
     no_device_count=$((no_device_count + 1))
     if [ "$no_device_count" -ge "$max_no_device_count" ]; then
       echo "$(date "+%F %T") No devices connected for $max_no_device_count cycles. Exiting."
+      local command="docker-compose up -d --force-recreate emulator$APPIUM_PORT"
+      echo "$DATETIME execute command ==> $command"
+      botman_team no device found and start emulator: $HOST_IP:$TARGET_PORT $UDID
+      exec_remote_cmd $HOST_IP $command
       break
     fi
   fi
