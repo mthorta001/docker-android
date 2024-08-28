@@ -1,7 +1,5 @@
 #!/bin/bash
 
-DATETIME=$(date "+%F %T")
-
 function wait_emulator_to_be_ready() {
   boot_completed=false
   while [ "$boot_completed" == false ]; do
@@ -337,14 +335,14 @@ function botman_user() {
   curl -X POST "https://botman.int.rclabenv.com/v2/user/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
-    -d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$DATETIME  $*\" }"
+    -d "{ \"email\": \"swain.zheng@ringcentral.com\", \"message\": \"$(date "+%F %T")  $*\" }"
 }
 
 function botman_team() {
     curl -X POST "https://botman.int.rclabenv.com/v2/team/message" \
     -H "Authorization: Bearer $TOKEN" \
     -H "content-type: application/json" \
-    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$DATETIME  $*\" }"
+    -d "{ \"mentionList\": [\"swain.zheng@ringcentral.com\"], \"teamName\": \"Emulator$(cut -d'.' -f4 <<<$HOST_IP)\", \"message\": \"$(date "+%F %T")  $*\" }"
 }
 
 function replaceNoVncPython() {
@@ -384,10 +382,10 @@ while true; do
     no_device_count=$((no_device_count + 1))
     if [ "$no_device_count" -ge "$max_no_device_count" ]; then
       echo "$(date "+%F %T") No devices connected for $max_no_device_count cycles. Exiting."
-      local command="docker-compose up -d --force-recreate emulator$APPIUM_PORT"
-      echo "$DATETIME execute command ==> $command"
+      CMD_UP_CONTAINER="docker-compose up -d --force-recreate emulator$APPIUM_PORT"
+      echo "$(date "+%F %T") execute command ==> $CMD_UP_CONTAINER"
       botman_team no device found and start emulator: $HOST_IP:$TARGET_PORT $UDID
-      exec_remote_cmd $HOST_IP $command
+      exec_remote_cmd $HOST_IP $CMD_UP_CONTAINER
       break
     fi
   fi
