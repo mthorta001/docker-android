@@ -323,11 +323,11 @@ DEVICE_SPY_EXEC_CMD=http://aqa01-i01-xta02.lab.nordigy.ru:10000/api/v1/hosts/exe
 function exec_remote_cmd() {
   local hostname=$1
   local command=$2
-  local timeout=${3:-60}
+  local timeout=60
   curl -X POST "$DEVICE_SPY_EXEC_CMD" \
     -H "accept: application/json" \
     -H "content-type: application/json" \
-    -d "{\"hostname\": \"$hostname\", \"cmd\": \"$command\", \"timeout\": $timeout}"
+    -d "{ \"hostname\": \"$hostname\", \"cmd\": \"$command\", \"timeout\": $timeout }"
 }
 
 TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InN3YWluLnpoZW5nQHJpbmdjZW50cmFsLmNvbSIsInNlcnZpY2UiOiJzd2Fpbi56aGVuZyIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE2NTA4Njg5MTcsImV4cCI6MTk2NjIyODkxN30.ZGy1aqx6e8yGMMqmiOkRuB1Rf44Y5vkLkVIURMmSRXA
@@ -382,10 +382,10 @@ while true; do
     no_device_count=$((no_device_count + 1))
     if [ "$no_device_count" -ge "$max_no_device_count" ]; then
       echo "$(date "+%F %T") No devices connected for $max_no_device_count cycles. Exiting."
-      CMD_UP_CONTAINER="docker-compose up -d --force-recreate emulator$APPIUM_PORT"
+      CMD_UP_CONTAINER="docker compose up -d --force-recreate emulator$APPIUM_PORT"
       echo "$(date "+%F %T") execute command ==> $CMD_UP_CONTAINER"
       botman_team no device found and start emulator: $HOST_IP:$TARGET_PORT $UDID
-      exec_remote_cmd $HOST_IP $CMD_UP_CONTAINER
+      exec_remote_cmd $HOST_IP "$CMD_UP_CONTAINER"
       break
     fi
   fi
