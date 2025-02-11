@@ -319,7 +319,7 @@ function health_check_adb_devices() {
   fi
 }
 
-DEVICE_SPY_EXEC_CMD=https://device-spy-mthor.int.rclabenv.com/api/v1/hosts/exec_cmd
+DEVICE_SPY_EXEC_CMD=$DEVICE_SPY/api/v1/hosts/exec_cmd
 function exec_remote_cmd() {
   local hostname=$1
   local command=$2
