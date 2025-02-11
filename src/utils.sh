@@ -69,7 +69,7 @@ function enable_proxy_if_needed() {
   fi
 }
 
-MTHOR_HOST=http://aqa01-i01-xta02.lab.nordigy.ru:10000
+MTHOR_HOST=https://device-spy-mthor.int.rclabenv.com
 MTHOR_LOCK_DEVICE=$MTHOR_HOST/api/v1/device-locks
 MTHOR_UNLOCK_DEVICE=$MTHOR_HOST/api/v1/device-locks/$UDID
 function lock_device() {
@@ -319,7 +319,7 @@ function health_check_adb_devices() {
   fi
 }
 
-DEVICE_SPY_EXEC_CMD=http://aqa01-i01-xta02.lab.nordigy.ru:10000/api/v1/hosts/exec_cmd
+DEVICE_SPY_EXEC_CMD=https://device-spy-mthor.int.rclabenv.com/api/v1/hosts/exec_cmd
 function exec_remote_cmd() {
   local hostname=$1
   local command=$2
