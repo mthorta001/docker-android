@@ -50,6 +50,47 @@ def convert_str_to_bool(str: str) -> bool:
         logger.error(err)
 
 
+def get_env_int(env_name: str, default_value: int) -> int:
+    """
+    Safely get integer value from environment variable.
+    
+    :param env_name: Environment variable name
+    :param default_value: Default value if env var is not set or invalid
+    :return: Integer value
+    """
+    try:
+        value = os.getenv(env_name)
+        if value is None:
+            return default_value
+        return int(value)
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid integer value for {env_name}: {os.getenv(env_name)}, using default: {default_value}")
+        return default_value
+
+
+def get_env_port_from_udid(default_port: str = "5554") -> str:
+    """
+    Safely extract port from UDID environment variable.
+    
+    :param default_port: Default port if UDID is not set or invalid
+    :return: Port string
+    """
+    udid = os.getenv('UDID')
+    if udid is None:
+        logger.warning(f"UDID environment variable not set, using default port: {default_port}")
+        return default_port
+    
+    if 'emulator-' in udid:
+        try:
+            return udid.replace('emulator-', '')
+        except AttributeError:
+            logger.warning(f"Invalid UDID format: {udid}, using default port: {default_port}")
+            return default_port
+    else:
+        logger.warning(f"UDID does not contain 'emulator-' prefix: {udid}, using as-is")
+        return udid
+
+
 def is_initialized(device_name) -> bool:
     config_path = os.path.join(ROOT, 'android_emulator', 'config.ini')
 
@@ -158,7 +199,7 @@ def appium_run(avd_name: str):
 
     :param avd_name: Name of android virtual device / emulator
     """
-    appium_port = int(os.getenv('APPIUM_PORT', 4723))
+    appium_port = get_env_int('APPIUM_PORT', 4723)
     default_capabilities = os.getenv('DEFAULT_CAPABILITIES', '')
     DEFAULT_LOG_PATH = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
 
@@ -185,10 +226,10 @@ def appium_run(avd_name: str):
         try:
             mobile_web_test = convert_str_to_bool(str(os.getenv('MOBILE_WEB_TEST', False)))
             appium_host = os.getenv('APPIUM_HOST', local_ip)
-            appium_port = int(os.getenv('APPIUM_PORT', 4723))
+            appium_port = get_env_int('APPIUM_PORT', 4723)
             selenium_host = os.getenv('SELENIUM_HOST', '172.17.0.1')
-            selenium_port = int(os.getenv('SELENIUM_PORT', 4444))
-            selenium_timeout = int(os.getenv('SELENIUM_TIMEOUT', 30))
+            selenium_port = get_env_int('SELENIUM_PORT', 4444)
+            selenium_timeout = get_env_int('SELENIUM_TIMEOUT', 30)
             browser_name = default_web_browser if mobile_web_test else 'android'
             create_node_config(avd_name, browser_name, appium_host, appium_port, selenium_host, selenium_port,
                                selenium_timeout)
@@ -202,7 +243,7 @@ def appium_run(avd_name: str):
 def back_appium_run():
     """run this appium background to resolve some tasks
     """
-    appium_port = int(os.getenv('APPIUM_PORT', 4723))
+    appium_port = get_env_int('APPIUM_PORT', 4723)
     appium_port2 = appium_port + 1
     os.environ['APPIUM_PORT2'] = str(appium_port2)
     logger.info(f"APPIUM_PORT2 set to: {os.getenv('APPIUM_PORT2')}")
@@ -282,7 +323,7 @@ def run():
 
     if is_first_run:
         logger.info('Emulator was not previously initialized. Preparing a new one...')
-        port = os.getenv('UDID').replace('emulator-', '')
+        port = get_env_port_from_udid()
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
               '-accel on -wipe-data -writable-system -memory {memory} -partition-size {dp_size} ' \
               '-dns-server 10.32.51.10,10.32.51.12 -verbose {custom_args}'\
@@ -290,7 +331,7 @@ def run():
         logger.info('command: {cmd}'.format(cmd=cmd))
     else:
         logger.info('Using previously initialized AVD...')
-        port = os.getenv('UDID').replace('emulator-', '')
+        port = get_env_port_from_udid()
         cmd = 'emulator/emulator @{name} -port {port} -timezone Asia/Shanghai -no-boot-anim -gpu auto ' \
               '-accel on -verbose -writable-system -memory {memory} -partition-size {dp_size} ' \
               '-dns-server 10.32.51.10,10.32.51.12 {custom_args}' \

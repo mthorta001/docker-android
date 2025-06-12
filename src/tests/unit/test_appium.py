@@ -43,17 +43,22 @@ class TestAppium(TestCase):
 
     @mock.patch('os.popen')
     @mock.patch('subprocess.check_call')
-    def test_invalid_integer(self, mocked_os, mocked_subprocess):
+    @mock.patch('src.app.logger')
+    def test_invalid_integer(self, mocked_logger, mocked_subprocess, mocked_os):
         os.environ['APPIUM_PORT'] = 'test'
         with mock.patch('src.app.create_node_config') as mocked_config:
             self.assertFalse(mocked_config.called)
             self.assertFalse(mocked_os.called)
             self.assertFalse(mocked_subprocess.called)
             app.appium_run(self.avd_name)
-            self.assertFalse(mocked_config.called)
+            # Should gracefully handle invalid port and use default 4723
+            self.assertTrue(mocked_logger.warning.called)
             self.assertTrue(mocked_os.called)
             self.assertTrue(mocked_subprocess.called)
-            self.assertRaises(ValueError)
+            # Verify that the warning was logged about invalid port value
+            warning_calls = [call for call in mocked_logger.warning.call_args_list 
+                           if 'Invalid integer value for APPIUM_PORT' in str(call)]
+            self.assertTrue(len(warning_calls) > 0)
 
     def test_config_creation(self):
         from src import CONFIG_FILE
