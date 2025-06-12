@@ -106,11 +106,13 @@ jobs:
         run: |
           # Basic test to ensure image was built correctly
           echo "=== Available Docker images ==="
-          docker images | grep budtmo/docker-android || echo "No budtmo/docker-android images found"
+          docker images | grep docker-android || echo "No docker-android images found"
           docker images
           
           # Test image can start (basic smoke test)
-          IMAGE_TAG="budtmo/docker-android:emulator_${ANDROID_VERSION}"
+          # Note: Should match non-optimized version format: rcswain/docker-android-x86-X.X:TAG
+          DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
+          IMAGE_TAG="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}:${TRAVIS_TAG}"
           echo "Testing image: $IMAGE_TAG"
           
           # Check if the specific image exists
