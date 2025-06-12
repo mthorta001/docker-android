@@ -131,7 +131,7 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
     :param avd_name: Name of android virtual device / emulator
     """
 
-    device_name_bash = device.replace(' ', '\ ')
+    device_name_bash = device.replace(' ', r'\ ')
     skin_name = device.replace(' ', '_').lower()
 
     # For custom hardware profile

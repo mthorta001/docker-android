@@ -134,10 +134,23 @@ RUN yes | sdkmanager --licenses --sdk_root=/root && \
 #==============================================
 # Download proper version of chromedriver
 # to be able to use Chrome browser in emulator
+# Supports both old and new ChromeDriver URL formats
 #==============================================
-RUN wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" \
- && unzip -x chrome.zip \
- && rm chrome.zip
+RUN set -x && \
+    # Try new Chrome for Testing format first (v115+)
+    if wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" 2>/dev/null; then \
+        echo "Downloaded ChromeDriver ${CHROME_DRIVER} from Chrome for Testing" && \
+        unzip -x chrome.zip && \
+        rm chrome.zip; \
+    # Fallback to old format for versions < 115
+    elif wget -nv -O chrome.zip "https://chromedriver.storage.googleapis.com/${CHROME_DRIVER}/chromedriver_linux64.zip" 2>/dev/null; then \
+        echo "Downloaded ChromeDriver ${CHROME_DRIVER} from legacy repository" && \
+        unzip -x chrome.zip && \
+        rm chrome.zip; \
+    else \
+        echo "ERROR: Failed to download ChromeDriver ${CHROME_DRIVER} from both repositories" && \
+        exit 1; \
+    fi
 
 #================================================================
 # Download Google Play Services APK and Play Store from apklinker
