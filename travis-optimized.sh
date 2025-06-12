@@ -145,8 +145,16 @@ run_tests() {
         python3 -m pip install -r requirements.txt
     fi
     
-    # Run tests
-    if ! python3 -m pytest tests/ -v --tb=short; then
+    # Run tests (using src/tests as configured in setup.cfg)
+    # Set required environment variables for testing
+    export ANDROID_VERSION=${ANDROID_VERSION:-"16.0"}
+    export API_LEVEL=${API_LEVEL:-"34"}
+    export PROCESSOR=${PROCESSOR:-"x86_64"}
+    export SYS_IMG=${SYS_IMG:-"x86_64"}
+    export IMG_TYPE=${IMG_TYPE:-"google_apis_playstore"}
+    
+    # Run only unit tests in CI environment (e2e tests require running emulator)
+    if ! python3 -m pytest src/tests/unit/ -v --tb=short; then
         log_error "Unit tests failed"
         return 1
     fi
@@ -272,17 +280,24 @@ main() {
         esac
     done
     
-    # Validate environment
+    # If only testing is requested, skip Docker validation
+    if [[ "$test_only" == "true" ]]; then
+        log_info "Running tests only (--test-only specified)"
+        
+        # Only validate Python for tests
+        if ! command -v python3 &> /dev/null; then
+            log_error "Python 3 is not installed or not in PATH"
+            exit 1
+        fi
+        
+        run_tests
+        exit $?
+    fi
+    
+    # Validate full environment for builds
     if ! validate_environment; then
         log_error "Environment validation failed"
         exit 1
-    fi
-    
-    # If only testing is requested
-    if [[ "$test_only" == "true" ]]; then
-        log_info "Running tests only (--test-only specified)"
-        run_tests
-        exit $?
     fi
     
     # Check if this is a tagged release or if we have required variables
