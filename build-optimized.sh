@@ -152,8 +152,13 @@ build_optimized_image() {
 # Import functions from release.sh
 source_functions() {
     if [[ -f "$SCRIPT_DIR/release.sh" ]]; then
-        # Source only the needed functions
-        source <(grep -E '^(get_api_level|get_chromedriver_version|get_processor|get_sys_img|get_img_type|get_browser)' "$SCRIPT_DIR/release.sh")
+        # Set required environment variables before sourcing
+        export DOCKER_ORG="${DOCKER_ORG:-budtmo}"
+        
+        # Temporarily disable strict mode for sourcing
+        set +euo pipefail
+        source "$SCRIPT_DIR/release.sh"
+        set -euo pipefail
     else
         log_error "release.sh not found. Please run from project root."
         exit 1
