@@ -73,6 +73,11 @@ build_optimized_image() {
     log_info "Building optimized Docker image for Android $android_version"
     log_info "Release tag: $release_tag"
     
+    # Determine Docker registry and image name
+    local docker_registry="${DOCKER_USERNAME:-budtmo}"
+    local image_name="$docker_registry/docker-android"
+    local image_tag="emulator_$android_version"
+    
     # Build arguments
     BUILD_ARGS=(
         "--build-arg" "ANDROID_VERSION=$android_version"
@@ -83,9 +88,14 @@ build_optimized_image() {
         "--build-arg" "IMG_TYPE=$(get_img_type "$android_version")"
         "--build-arg" "BROWSER=$(get_browser "$android_version")"
         "--file" "docker/Emulator_x86.optimized"
-        "--tag" "rcswain/docker-android-x86-$android_version:$release_tag"
-        "--tag" "rcswain/docker-android-x86-$android_version:latest-optimized"
+        "--tag" "$image_name:$image_tag"
+        "--tag" "$image_name:$image_tag-optimized"
     )
+    
+    # Add additional tags if release tag is provided
+    if [[ "$release_tag" != "optimized" ]]; then
+        BUILD_ARGS+=("--tag" "$image_name:$image_tag-$release_tag")
+    fi
     
     # Optional build flags
     if [[ "${NO_CACHE:-}" == "true" ]]; then
@@ -116,7 +126,27 @@ build_optimized_image() {
     
     # Show image information
     log_info "Image information:"
-    docker images "rcswain/docker-android-x86-$android_version:$release_tag" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+    docker images "$image_name:$image_tag" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+    
+    # Push to registry if credentials are available
+    if [[ -n "${DOCKER_USERNAME:-}" ]] && [[ -n "${DOCKER_PASSWORD:-}" ]]; then
+        log_info "Pushing images to Docker Hub..."
+        
+        # Push all tags
+        docker push "$image_name:$image_tag"
+        docker push "$image_name:$image_tag-optimized"
+        
+        if [[ "$release_tag" != "optimized" ]]; then
+            docker push "$image_name:$image_tag-$release_tag"
+        fi
+        
+        log_info "Images pushed successfully!"
+    else
+        log_warn "Docker credentials not found. Images built but not pushed."
+        log_info "To push manually:"
+        log_info "  docker push $image_name:$image_tag"
+        log_info "  docker push $image_name:$image_tag-optimized"
+    fi
 }
 
 # Import functions from release.sh
@@ -138,15 +168,25 @@ main() {
         exit 0
     fi
     
+    # Use environment variables if available, otherwise use parameters or defaults
+    local android_version="${ANDROID_VERSION:-${1:-12.0}}"
+    local release_tag="${TRAVIS_TAG:-${2:-optimized}}"
+    
     check_docker
     source_functions
     estimate_build_time
     
     log_info "Starting optimized build process..."
+    log_info "Android Version: $android_version"
+    log_info "Release Tag: $release_tag"
     
-    if build_optimized_image "$ANDROID_VERSION" "$RELEASE"; then
+    if build_optimized_image "$android_version" "$release_tag"; then
+        local docker_registry="${DOCKER_USERNAME:-budtmo}"
+        local image_name="$docker_registry/docker-android"
+        local image_tag="emulator_$android_version"
+        
         log_info "🎉 Optimized Docker image built successfully!"
-        log_info "You can now use: docker run rcswain/docker-android-x86-$ANDROID_VERSION:$RELEASE"
+        log_info "You can now use: docker run $image_name:$image_tag"
     else
         log_error "Build failed. Check the logs above for details."
         exit 1
