@@ -105,36 +105,95 @@ jobs:
       - name: Test Docker image
         run: |
           # Basic test to ensure image was built correctly
-          docker images | grep budtmo/docker-android
+          echo "=== Available Docker images ==="
+          docker images | grep budtmo/docker-android || echo "No budtmo/docker-android images found"
+          docker images
           
           # Test image can start (basic smoke test)
           IMAGE_TAG="budtmo/docker-android:emulator_${ANDROID_VERSION}"
           echo "Testing image: $IMAGE_TAG"
           
-          # Start container in background
+          # Check if the specific image exists
+          if ! docker image inspect "$IMAGE_TAG" >/dev/null 2>&1; then
+            echo "❌ Image $IMAGE_TAG not found!"
+            echo "Available images:"
+            docker images | grep docker-android || echo "No docker-android images found"
+            exit 1
+          fi
+          
+          echo "✅ Image $IMAGE_TAG found"
+          
+          # Start container in background with production-like config
+          echo "Starting container..."
           docker run -d --name test-container \
-            -e EMULATOR_DEVICE="Samsung Galaxy S10" \
-            -e WEB_VNC=true \
-            -p 6080:6080 \
-            -p 5554:5554 \
+            --privileged \
+            --shm-size=2g \
+            -e DEVICE="pixel" \
+            -e AVD_NAME="Pixel-Test" \
+            -e RAM="8192" \
+            -e DATAPARTITION="8192" \
+            -e APPIUM="true" \
+            -e APPIUM_PORT="4723" \
+            -e ADB_PORT="5555" \
+            -e WEB_VNC="false" \
+            -e DEFAULT_CAPABILITIES='{"appium:skipDeviceInitialization": true, "appium:disableAndroidWatchers": true}' \
+            -p 4723:4723 \
             -p 5555:5555 \
-            "$IMAGE_TAG"
+            "$IMAGE_TAG" || {
+              echo "❌ Failed to start container"
+              docker logs test-container 2>/dev/null || echo "No logs available"
+              exit 1
+            }
           
-          # Wait a bit for container to start
-          sleep 30
+          # Wait for container to initialize (Android emulator needs time)
+          echo "Waiting for container to start..."
           
-          # Check if container is running
+          # Check container status periodically
+          for i in {1..12}; do
+            echo "Check $i/12: Waiting 15 seconds..."
+            sleep 15
+            
+            if ! docker ps | grep test-container; then
+              echo "❌ Container stopped unexpectedly!"
+              echo "Container logs:"
+              docker logs test-container
+              exit 1
+            fi
+            
+            echo "Container still running, checking progress..."
+            docker logs --tail 5 test-container
+          done
+          
+          echo "=== Final container status check ==="
           if docker ps | grep test-container; then
-            echo "✅ Container started successfully"
+            echo "✅ Container started successfully and is still running"
+            echo "Container status:"
+            docker ps | grep test-container
+            
+            # Additional health checks
+            echo "=== Health checks ==="
+            echo "Checking ADB connection..."
+            if docker exec test-container adb devices 2>/dev/null | grep -q "emulator"; then
+              echo "✅ ADB connection established"
+            else
+              echo "⚠️  ADB connection not yet established (may need more time)"
+            fi
+            
+            echo "Container logs (last 30 lines):"
+            docker logs --tail 30 test-container
           else
-            echo "❌ Container failed to start"
+            echo "❌ Container failed to start or stopped"
+            echo "Container logs:"
             docker logs test-container
+            echo "Docker ps output:"
+            docker ps -a | grep test-container
             exit 1
           fi
           
           # Clean up
-          docker stop test-container
-          docker rm test-container
+          echo "Cleaning up..."
+          docker stop test-container || echo "Container already stopped"
+          docker rm test-container || echo "Container already removed"
 
       - name: Image size report
         run: |
