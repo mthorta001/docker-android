@@ -6,9 +6,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Default values
-ANDROID_VERSION="${1:-12.0}"
-RELEASE="${2:-optimized}"
+# Default values (don't override environment variables)
 BUILD_ARGS=()
 
 # Colors for output
