@@ -16,6 +16,24 @@ def mock_open(*args, **kargs):
 
 class TestApp(TestCase):
     """Unit test class to test other methods in the app."""
+    
+    def setUp(self):
+        """Set up test environment variables."""
+        # Set required environment variables for testing
+        os.environ['UDID'] = 'emulator-5554'
+        os.environ['ANDROID_VERSION'] = '7.1.1'
+        os.environ['API_LEVEL'] = '25'
+        os.environ['PROCESSOR'] = 'x86'
+        os.environ['SYS_IMG'] = 'x86'
+        os.environ['IMG_TYPE'] = 'google_apis'
+        
+    def tearDown(self):
+        """Clean up test environment variables."""
+        # Clean up environment variables
+        test_env_vars = ['UDID', 'APPIUM', 'RELAXED_SECURITY']
+        for var in test_env_vars:
+            if var in os.environ:
+                del os.environ[var]
 
     @classmethod
     def test_symlink(self):
