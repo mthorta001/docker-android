@@ -7,46 +7,56 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly IMAGE="${DOCKER_ORG:-rcswain}/docker-android"
 readonly DEFAULT_PROCESSOR="x86_64"
 
-# Supported Android versions and API level mapping
-# https://apilevels.com/
-declare -A readonly ANDROID_API_LEVELS=(
-    [5.0.1]=21
-    [5.1.1]=22
-    [6.0]=23
-    [7.0]=24
-    [7.1.1]=25
-    [8.0]=26
-    [8.1]=27
-    [9.0]=28
-    [10.0]=29
-    [11.0]=30
-    [12.0]=31
-    [13.0]=33
-    [14.0]=34
-    [15.0]=35
-    [16.0]=36
-)
+# Get API level for Android version
+get_api_level() {
+    case "$1" in
+        "5.0.1") echo "21" ;;
+        "5.1.1") echo "22" ;;
+        "6.0") echo "23" ;;
+        "7.0") echo "24" ;;
+        "7.1.1") echo "25" ;;
+        "8.0") echo "26" ;;
+        "8.1") echo "27" ;;
+        "9.0") echo "28" ;;
+        "10.0") echo "29" ;;
+        "11.0") echo "30" ;;
+        "12.0") echo "31" ;;
+        "13.0") echo "33" ;;
+        "14.0") echo "34" ;;
+        "15.0") echo "35" ;;
+        "16.0") echo "36" ;;
+        *) echo "" ;;
+    esac
+}
 
+# Get ChromeDriver version for Android version
+get_chromedriver_version() {
+    case "$1" in
+        "5.0.1") echo "2.21" ;;
+        "5.1.1") echo "2.13" ;;
+        "6.0") echo "2.18" ;;
+        "7.0") echo "2.23" ;;
+        "7.1.1") echo "2.28" ;;
+        "8.0") echo "2.31" ;;
+        "8.1") echo "2.33" ;;
+        "9.0") echo "2.40" ;;
+        "10.0") echo "74.0.3729.6" ;;
+        "11.0") echo "83.0.4103.39" ;;
+        "12.0") echo "92.0.4515.107" ;;
+        "13.0") echo "104.0.5112.29" ;;
+        "14.0") echo "114.0.5735.90" ;;
+        "15.0") echo "114.0.5735.90" ;;
+        "16.0") echo "137.0.7151.70" ;;
+        *) echo "" ;;
+    esac
+}
 
-# ChromeDriver version mapping
-# "Chrome for Testing availability" https://googlechromelabs.github.io/chrome-for-testing/
-declare -A readonly CHROMEDRIVER_VERSIONS=(
-    [5.0.1]="2.21"
-    [5.1.1]="2.13"
-    [6.0]="2.18"
-    [7.0]="2.23"
-    [7.1.1]="2.28"
-    [8.0]="2.31"
-    [8.1]="2.33"
-    [9.0]="2.40"
-    [10.0]="74.0.3729.6"
-    [11.0]="83.0.4103.39"
-    [12.0]="92.0.4515.43"
-    [13.0]="104.0.5112.29"
-    [14.0]="114.0.5735.90"
-    [15.0]="114.0.5735.90"
-    [16.0]="137.0.7151.70"
-)
+# Check if Android version is supported
+is_supported_version() {
+    local api_level
+    api_level=$(get_api_level "$1")
+    [[ -n "$api_level" ]]
+}
 
 # Global variables
 TASK=""
@@ -71,6 +81,11 @@ log_push() {
     echo "[PUSH] $*" >&2
 }
 
+# Get supported versions string
+get_supported_versions_string() {
+    echo "5.0.1|5.1.1|6.0|7.0|7.1.1|8.0|8.1|9.0|10.0|11.0|12.0|13.0|14.0|15.0|16.0"
+}
+
 # Show usage help
 show_usage() {
     cat << EOF
@@ -88,15 +103,6 @@ Examples:
 EOF
 }
 
-# Get supported versions string
-get_supported_versions_string() {
-    local versions=()
-    for version in "${!ANDROID_API_LEVELS[@]}"; do
-        versions+=("$version")
-    done
-    printf "%s|" "${versions[@]}" | sed 's/|$//'
-}
-
 # Validate input parameters
 validate_input() {
     # Validate task type
@@ -110,7 +116,7 @@ validate_input() {
     esac
 
     # Validate Android version
-    if [[ "$ANDROID_VERSION" != "all" ]] && [[ -z "${ANDROID_API_LEVELS[$ANDROID_VERSION]:-}" ]]; then
+    if [[ "$ANDROID_VERSION" != "all" ]] && ! is_supported_version "$ANDROID_VERSION"; then
         log_error "Unsupported Android version: $ANDROID_VERSION"
         log_error "Supported versions: $(get_supported_versions_string)"
         exit 1
@@ -147,9 +153,7 @@ get_user_input() {
 # Parse Android versions list
 parse_android_versions() {
     if [[ "$ANDROID_VERSION" == "all" ]]; then
-        for version in "${!ANDROID_API_LEVELS[@]}"; do
-            ANDROID_VERSIONS+=("$version")
-        done
+        ANDROID_VERSIONS=(5.0.1 5.1.1 6.0 7.0 7.1.1 8.0 8.1 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0)
     else
         ANDROID_VERSIONS=("$ANDROID_VERSION")
     fi
@@ -157,33 +161,36 @@ parse_android_versions() {
     log_info "Target Android versions: ${ANDROID_VERSIONS[*]}"
 }
 
-# Get image configuration
-get_image_config() {
-    local version="$1"
-    local -n config_ref=$2
-    
-    # Set default values
-    config_ref[img_type]="google_apis"
-    config_ref[browser]="chrome"
-    config_ref[processor]="$DEFAULT_PROCESSOR"
-    config_ref[sys_img]="$DEFAULT_PROCESSOR"
+# Get image type
+get_img_type() {
+    case "$1" in
+        5.0.1|5.1.1) echo "default" ;;
+        *) echo "google_apis" ;;
+    esac
+}
 
-    # Adjust configuration based on version
-    case "$version" in
-        5.0.1|5.1.1)
-            config_ref[img_type]="default"
-            config_ref[browser]="browser"
-            ;;
-        6.0)
-            config_ref[img_type]="google_apis"
-            config_ref[browser]="browser"
-            ;;
-        8.1)
-            config_ref[sys_img]="x86"
-            ;;
-        9.0)
-            config_ref[processor]="x86_64"
-            ;;
+# Get browser type
+get_browser() {
+    case "$1" in
+        5.0.1|5.1.1|6.0) echo "browser" ;;
+        *) echo "chrome" ;;
+    esac
+}
+
+# Get processor type
+get_processor() {
+    case "$1" in
+        9.0) echo "x86_64" ;;
+        *) echo "$DEFAULT_PROCESSOR" ;;
+    esac
+}
+
+# Get system image type  
+get_sys_img() {
+    case "$1" in
+        8.1) echo "x86" ;;
+        9.0) echo "x86_64" ;;
+        *) echo "$DEFAULT_PROCESSOR" ;;
     esac
 }
 
@@ -308,20 +315,28 @@ execute_tests() {
 # Build Docker image
 build_docker_image() {
     local version="$1"
-    local -A config
+    local api_level
+    local chrome_driver
+    local img_type
+    local browser
+    local processor
+    local sys_img
     
-    get_image_config "$version" config
+    api_level=$(get_api_level "$version")
+    chrome_driver=$(get_chromedriver_version "$version")
+    img_type=$(get_img_type "$version")
+    browser=$(get_browser "$version")
+    processor=$(get_processor "$version")
+    sys_img=$(get_sys_img "$version")
     
-    local api_level="${ANDROID_API_LEVELS[$version]}"
-    local chrome_driver="${CHROMEDRIVER_VERSIONS[$version]}"
     local image_version="$IMAGE-x86-$version:$RELEASE"
     local image_latest="$IMAGE-x86-$version:latest"
     local dockerfile="docker/Emulator_x86"
 
     log_build "Building image for Android $version"
     log_build "API Level: $api_level"
-    log_build "Image Type: ${config[img_type]}"
-    log_build "System Image: ${config[sys_img]}"
+    log_build "Image Type: $img_type"
+    log_build "System Image: $sys_img"
     log_build "ChromeDriver version: $chrome_driver"
     log_build "Image names: $image_version, $image_latest"
     log_build "Dockerfile: $dockerfile"
@@ -331,10 +346,10 @@ build_docker_image() {
         ${TOKEN:+--build-arg TOKEN="$TOKEN"} \
         --build-arg ANDROID_VERSION="$version" \
         --build-arg API_LEVEL="$api_level" \
-        --build-arg PROCESSOR="${config[processor]}" \
-        --build-arg SYS_IMG="${config[sys_img]}" \
-        --build-arg IMG_TYPE="${config[img_type]}" \
-        --build-arg BROWSER="${config[browser]}" \
+        --build-arg PROCESSOR="$processor" \
+        --build-arg SYS_IMG="$sys_img" \
+        --build-arg IMG_TYPE="$img_type" \
+        --build-arg BROWSER="$browser" \
         --build-arg CHROME_DRIVER="$chrome_driver" \
         --build-arg APP_RELEASE_VERSION="$RELEASE" \
         -f "$dockerfile" .
