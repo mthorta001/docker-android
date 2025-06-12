@@ -71,10 +71,10 @@ build_optimized_image() {
     log_info "Building optimized Docker image for Android $android_version"
     log_info "Release tag: $release_tag"
     
-    # Determine Docker registry and image name
+    # Determine Docker registry and image name (matching non-optimized format)
     local docker_registry="${DOCKER_USERNAME:-budtmo}"
-    local image_name="$docker_registry/docker-android"
-    local image_tag="emulator_$android_version"
+    local image_name="$docker_registry/docker-android-x86-$android_version"
+    local image_tag="$release_tag"
     
     # Build arguments
     BUILD_ARGS=(
@@ -87,13 +87,8 @@ build_optimized_image() {
         "--build-arg" "BROWSER=$(get_browser "$android_version")"
         "--file" "docker/Emulator_x86.optimized"
         "--tag" "$image_name:$image_tag"
-        "--tag" "$image_name:$image_tag-optimized"
+        "--tag" "$image_name:latest"
     )
-    
-    # Add additional tags if release tag is provided
-    if [[ "$release_tag" != "optimized" ]]; then
-        BUILD_ARGS+=("--tag" "$image_name:$image_tag-$release_tag")
-    fi
     
     # Optional build flags
     if [[ "${NO_CACHE:-}" == "true" ]]; then
@@ -124,7 +119,7 @@ build_optimized_image() {
     
     # Show image information
     log_info "Image information:"
-    docker images "$image_name:$image_tag" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+    docker images "$image_name" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
     
     # Push to registry if credentials are available
     if [[ -n "${DOCKER_USERNAME:-}" ]] && [[ -n "${DOCKER_PASSWORD:-}" ]]; then
@@ -132,18 +127,14 @@ build_optimized_image() {
         
         # Push all tags
         docker push "$image_name:$image_tag"
-        docker push "$image_name:$image_tag-optimized"
-        
-        if [[ "$release_tag" != "optimized" ]]; then
-            docker push "$image_name:$image_tag-$release_tag"
-        fi
+        docker push "$image_name:latest"
         
         log_info "Images pushed successfully!"
     else
         log_warn "Docker credentials not found. Images built but not pushed."
         log_info "To push manually:"
         log_info "  docker push $image_name:$image_tag"
-        log_info "  docker push $image_name:$image_tag-optimized"
+        log_info "  docker push $image_name:latest"
     fi
 }
 
@@ -240,11 +231,10 @@ main() {
     
     if build_optimized_image "$android_version" "$release_tag"; then
         local docker_registry="${DOCKER_USERNAME:-budtmo}"
-        local image_name="$docker_registry/docker-android"
-        local image_tag="emulator_$android_version"
+        local image_name="$docker_registry/docker-android-x86-$android_version"
         
         log_info "🎉 Optimized Docker image built successfully!"
-        log_info "You can now use: docker run $image_name:$image_tag"
+        log_info "You can now use: docker run $image_name:$release_tag"
     else
         log_error "Build failed. Check the logs above for details."
         exit 1
