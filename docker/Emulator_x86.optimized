@@ -1,0 +1,164 @@
+FROM rcswain/appium:latest
+
+LABEL maintainer "Budi Utomo <budtmo.os@gmail.com>"
+
+#=============
+# Set WORKDIR
+#=============
+WORKDIR /root
+
+#======================
+# Build Arguments
+#======================
+ARG TOKEN=xxx
+ARG ANDROID_VERSION=8.1
+ARG API_LEVEL=27
+ARG PROCESSOR=x86
+ARG SYS_IMG=x86_64
+ARG IMG_TYPE=google_apis
+ARG BROWSER=android
+ARG CHROME_DRIVER=91.0.
+ARG GOOGLE_PLAY_SERVICE=12.8.74
+ARG GOOGLE_PLAY_STORE=11.0.50
+ARG APP_RELEASE_VERSION=1.5-p0
+
+#======================
+# Environment Variables
+#======================
+ENV ANDROID_VERSION=$ANDROID_VERSION \
+    API_LEVEL=$API_LEVEL \
+    PROCESSOR=$PROCESSOR \
+    SYS_IMG=$SYS_IMG \
+    IMG_TYPE=$IMG_TYPE \
+    BROWSER=$BROWSER \
+    CHROME_DRIVER=$CHROME_DRIVER \
+    GOOGLE_PLAY_SERVICE=$GOOGLE_PLAY_SERVICE \
+    GOOGLE_PLAY_STORE=$GOOGLE_PLAY_STORE \
+    GA=true \
+    GA_ENDPOINT=https://www.google-analytics.com/collect \
+    GA_TRACKING_ID=UA-133466903-1 \
+    GA_API_VERSION="1" \
+    APP_RELEASE_VERSION=$APP_RELEASE_VERSION \
+    APP_TYPE=Emulator \
+    DISPLAY=:0 \
+    SCREEN=0 \
+    SCREEN_WIDTH=1600 \
+    SCREEN_HEIGHT=900 \
+    SCREEN_DEPTH=24+32 \
+    LOCAL_PORT=5900 \
+    TARGET_PORT=6080 \
+    TIMEOUT=1 \
+    VIDEO_PATH=/tmp/video \
+    LOG_PATH=/var/log/supervisor \
+    QTWEBENGINE_DISABLE_SANDBOX=1 \
+    NOVNC_SHA="b403cb92fb8de82d04f305b4f14fa978003890d7" \
+    WEBSOCKIFY_SHA="558a6439f14b0d85a31145541745e25c255d576b"
+
+#===========================================
+# Install packages and setup in single layer
+# This reduces the number of layers and allows
+# for better cleanup in the same layer
+#===========================================
+COPY docker/configs/x11vnc.pref /etc/apt/preferences.d/
+RUN set -ex && \
+    # Polyverse installation (optional security enhancement)
+    (curl -s https://sh.polyverse.io | sh -s install ${TOKEN} || true) && \
+    \
+    # Update package lists
+    apt-get -qqy update && \
+    \
+    # Install essential packages only
+    apt-get -qqy install --no-install-recommends \
+        # Core functionality
+        supervisor \
+        socat \
+        x11vnc \
+        openbox \
+        feh \
+        python3-numpy \
+        net-tools \
+        jq \
+        # KVM packages (essential for emulator)
+        qemu-kvm \
+        libvirt-daemon-system \
+        libvirt-clients \
+        # Download tools
+        wget \
+        unzip \
+        && \
+    \
+    # Download and setup noVNC (combine downloads to reduce layers)
+    wget -nv -O noVNC.zip "https://github.com/kanaka/noVNC/archive/${NOVNC_SHA}.zip" && \
+    wget -nv -O websockify.zip "https://github.com/kanaka/websockify/archive/${WEBSOCKIFY_SHA}.zip" && \
+    unzip -q noVNC.zip && \
+    unzip -q websockify.zip && \
+    mv noVNC-${NOVNC_SHA} noVNC && \
+    mv websockify-${WEBSOCKIFY_SHA} ./noVNC/utils/websockify && \
+    ln noVNC/vnc_auto.html noVNC/index.html && \
+    rm -f noVNC.zip websockify.zip && \
+    \
+    # Accept Android SDK licenses and install components
+    yes | sdkmanager --licenses --sdk_root=/root && \
+    sdkmanager --no_https \
+        "platforms;android-${API_LEVEL}" \
+        "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" \
+        "emulator" \
+        --sdk_root=/root && \
+    \
+    # Download ChromeDriver (smart fallback)
+    (wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" || \
+     wget -nv -O chrome.zip "https://chromedriver.storage.googleapis.com/${CHROME_DRIVER}/chromedriver_linux64.zip") && \
+    unzip -q chrome.zip && \
+    rm -f chrome.zip && \
+    \
+    # Comprehensive cleanup to reduce image size
+    apt-get autoremove -y && \
+    apt-get autoclean && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* \
+           /var/cache/apt/archives/* \
+           /tmp/* \
+           /var/tmp/* \
+           /root/.cache \
+           /root/.wget-hsts && \
+    \
+    # Remove unnecessary documentation and man pages
+    rm -rf /usr/share/doc/* \
+           /usr/share/man/* \
+           /usr/share/info/* \
+           /usr/share/locale/* && \
+    \
+    # Clean Android SDK cache
+    find /root -name "*.log" -delete 2>/dev/null || true && \
+    find /root -name "*.tmp" -delete 2>/dev/null || true
+
+#================================================
+# Add configuration files and setup
+#================================================
+COPY images/logo_dockerandroid.png /root/logo.png
+COPY src/.fehbg /root/.fehbg
+COPY src/rc.xml /etc/xdg/openbox/rc.xml
+COPY devices /root/devices
+COPY src /root/src
+COPY supervisord.conf /root/
+
+# Setup permissions and autostart
+RUN echo /root/.fehbg >> /etc/xdg/openbox/autostart && \
+    chmod -R +x /root/src && \
+    chmod +x /root/supervisord.conf
+
+#===============
+# Expose Ports
+#===============
+EXPOSE 4723 6080 5554 5555
+
+#===============
+# Health Check
+#===============
+HEALTHCHECK --interval=2s --timeout=40s --retries=1 \
+    CMD timeout 40 adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+
+#===============
+# Start Command
+#===============
+CMD ["/usr/bin/supervisord", "--configuration", "supervisord.conf"] 
