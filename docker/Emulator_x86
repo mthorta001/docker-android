@@ -135,7 +135,7 @@ RUN yes | sdkmanager --licenses --sdk_root=/root && \
 # Download proper version of chromedriver
 # to be able to use Chrome browser in emulator
 #==============================================
-RUN wget -nv -O chrome.zip "https://chromedriver.storage.googleapis.com/${CHROME_DRIVER}/chromedriver_linux64.zip" \
+RUN wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" \
  && unzip -x chrome.zip \
  && rm chrome.zip
 
