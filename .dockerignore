@@ -1,0 +1,81 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+documentation/
+
+# CI/CD
+.github/
+.travis.yml
+.gitlab-ci.yml
+Jenkinsfile
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+coverage.xml
+coverage_*.xml
+*.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Logs
+*.log
+logs/
+
+# Test files
+test_*.py
+*_test.py
+tests/
+coverage*/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Node modules (if any)
+node_modules/
+
+# Other build artifacts
+*.pyc
+*.pyo
+*.orig
+
+# Large example files that aren't needed in container
+example/sample_apk/large_*.apk
+
+# Backup files
+*.bak
+*.backup 

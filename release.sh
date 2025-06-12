@@ -331,7 +331,13 @@ build_docker_image() {
     
     local image_version="$IMAGE-x86-$version:$RELEASE"
     local image_latest="$IMAGE-x86-$version:latest"
-    local dockerfile="docker/Emulator_x86"
+    local dockerfile="${DOCKERFILE:-docker/Emulator_x86}"
+    
+    # Use optimized version if available
+    if [[ -f "docker/Emulator_x86.optimized" ]] && [[ "${USE_OPTIMIZED:-}" == "true" ]]; then
+        dockerfile="docker/Emulator_x86.optimized"
+        log_build "Using optimized Dockerfile for smaller image size"
+    fi
 
     log_build "Building image for Android $version"
     log_build "API Level: $api_level"
