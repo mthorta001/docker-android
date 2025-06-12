@@ -200,13 +200,25 @@ jobs:
       - name: Image size report
         run: |
           echo "## Docker Image Sizes" >> $GITHUB_STEP_SUMMARY
-          echo "| Image | Size | Compressed |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|------|------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|------|" >> $GITHUB_STEP_SUMMARY
           
-          for img in $(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep budtmo/docker-android | head -5); do
-            echo "| $img |" >> $GITHUB_STEP_SUMMARY
-          done
+          # Use the same Docker org logic as in the test step
+          DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
+          
+          # Show all built docker-android images
+          echo "=== All Docker Android Images ==="
+          docker images | grep docker-android || echo "No docker-android images found"
+          
+          # Add to GitHub summary - look for our specific pattern
+          if docker images --format "{{.Repository}}:{{.Tag}} {{.Size}}" | grep "$DOCKER_ORG/docker-android-x86-" | head -5; then
+            docker images --format "{{.Repository}}:{{.Tag}} {{.Size}}" | grep "$DOCKER_ORG/docker-android-x86-" | head -5 | while read image_info; do
+              echo "| $image_info |" >> $GITHUB_STEP_SUMMARY
+            done
+          else
+            echo "| No $DOCKER_ORG/docker-android-x86-* images found | - |" >> $GITHUB_STEP_SUMMARY
+          fi
           
           # Show in logs as well
-          echo "Built images:"
-          docker images | grep budtmo/docker-android 
+          echo "Built images for $DOCKER_ORG:"
+          docker images | grep "$DOCKER_ORG/docker-android" || echo "No images found for $DOCKER_ORG" 
