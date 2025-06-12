@@ -37,6 +37,7 @@ declare -A list_of_levels=(
         [13.0]=33
         [14.0]=34
         [15.0]=35
+        [16.0]=36
 )
 
 # The version of the Chrome browser installed on the Android emulator needs to be known beforehand
@@ -56,6 +57,7 @@ declare -A chromedriver_versions=(
         [13.0]="104.0.5112.29"
         [14.0]="114.0.5735.90"
         [15.0]="114.0.5735.90"
+        [16.0]="137.0.7151.70"
 )
 
 function get_android_versions() {
