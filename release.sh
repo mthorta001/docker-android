@@ -269,7 +269,7 @@ run_e2e_tests() {
     fi
 
     log_info "Running E2E tests..."
-    if ! nosetests src/tests/e2e -v; then
+    if ! python -m pytest src/tests/e2e -v --tb=short --cov=src --cov-report=xml:coverage_e2e.xml; then
         log_error "E2E tests failed"
         cleanup_docker_resources "$test_container"
         exit 1
@@ -294,7 +294,7 @@ run_unit_tests() {
         export SYS_IMG="$test_processor"
         export IMG_TYPE="$test_img_type"
         
-        nosetests src/tests/unit -v
+        python -m pytest src/tests/unit -v --tb=short --cov=src --cov-report=xml:coverage_unit.xml --cov-report=html:coverage
     )
 }
 
