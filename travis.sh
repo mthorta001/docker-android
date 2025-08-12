@@ -20,6 +20,7 @@ declare -A readonly ANDROID_VERSION_MAP=(
     [14]="14.0"
     [15]="15.0"
     [16]="16.0"
+    [16.0_16k]="16.0_16k"
 )
 
 # Logging functions

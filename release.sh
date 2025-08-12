@@ -25,6 +25,7 @@ get_api_level() {
         "14.0") echo "34" ;;
         "15.0") echo "35" ;;
         "16.0") echo "36" ;;
+        "16.0_16k") echo "36" ;;
         *) echo "" ;;
     esac
 }
@@ -47,6 +48,7 @@ get_chromedriver_version() {
         "14.0") echo "114.0.5735.90" ;;
         "15.0") echo "114.0.5735.90" ;;
         "16.0") echo "137.0.7151.70" ;;
+        "16.0_16k") echo "137.0.7151.70" ;;
         *) echo "" ;;
     esac
 }
@@ -83,7 +85,7 @@ log_push() {
 
 # Get supported versions string
 get_supported_versions_string() {
-    echo "5.0.1|5.1.1|6.0|7.0|7.1.1|8.0|8.1|9.0|10.0|11.0|12.0|13.0|14.0|15.0|16.0"
+    echo "5.0.1|5.1.1|6.0|7.0|7.1.1|8.0|8.1|9.0|10.0|11.0|12.0|13.0|14.0|15.0|16.0|16.0_16k"
 }
 
 # Show usage help
@@ -153,7 +155,7 @@ get_user_input() {
 # Parse Android versions list
 parse_android_versions() {
     if [[ "$ANDROID_VERSION" == "all" ]]; then
-        ANDROID_VERSIONS=(5.0.1 5.1.1 6.0 7.0 7.1.1 8.0 8.1 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0)
+        ANDROID_VERSIONS=(5.0.1 5.1.1 6.0 7.0 7.1.1 8.0 8.1 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 16.0_16k)
     else
         ANDROID_VERSIONS=("$ANDROID_VERSION")
     fi
@@ -165,6 +167,7 @@ parse_android_versions() {
 get_img_type() {
     case "$1" in
         5.0.1|5.1.1) echo "default" ;;
+        16.0_16k) echo "google_apis_ps16k" ;;
         *) echo "google_apis" ;;
     esac
 }
