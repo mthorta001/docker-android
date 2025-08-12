@@ -123,6 +123,18 @@ logger.info('Android version: {version} \n'
                                             img=SYS_IMG, img_type=IMG_TYPE))
 
 
+def get_avd_abi():
+    """
+    Get the ABI for avdmanager -b parameter.
+    For 16k page size version, we need to use 'page_size_16kb/x86_64' format.
+    For other versions, we need to use 'img_type/sys_img' format like 'google_apis/x86_64'.
+    """
+    if ANDROID_VERSION == '16.0_16k':
+        return f'page_size_16kb/{SYS_IMG}'
+    else:
+        return f'{IMG_TYPE}/{SYS_IMG}'
+
+
 def prepare_avd(device: str, avd_name: str, dp_size: str):
     """
     Create and run android virtual device.
@@ -144,11 +156,13 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
         symlink_force(profile_src_path, profile_dst_path)
 
     avd_path = '/'.join([ANDROID_HOME, 'android_emulator'])
-    creation_cmd = 'avdmanager create avd -f -n {name} -b {img_type}/{sys_img} -k "system-images;android-{api_lvl};' \
-                   '{img_type};{sys_img}" -d {device} -p {path}'.format(name=avd_name, img_type=IMG_TYPE,
-                                                                        sys_img=SYS_IMG,
-                                                                        api_lvl=API_LEVEL, device=device_name_bash,
-                                                                        path=avd_path)
+    avd_abi = get_avd_abi()
+    
+    # Build avdmanager command with proper ABI parameter
+    creation_cmd = 'avdmanager create avd -f -n {name} -b {abi} -k "system-images;android-{api_lvl};' \
+                   '{img_type};{sys_img}" -d {device} -p {path}'.format(
+                       name=avd_name, abi=avd_abi, img_type=IMG_TYPE, sys_img=SYS_IMG,
+                       api_lvl=API_LEVEL, device=device_name_bash, path=avd_path)
     logger.info('Command to create avd: {command}'.format(command=creation_cmd))
     subprocess.check_call(creation_cmd, shell=True)
 
