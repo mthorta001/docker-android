@@ -97,13 +97,16 @@ RUN set -ex && \
     ln noVNC/vnc_auto.html noVNC/index.html && \
     rm -f noVNC.zip websockify.zip && \
     \
-    # Accept Android SDK licenses and install components
-    yes | sdkmanager --licenses --sdk_root=/root && \
-    sdkmanager --no_https \
+    # Update sdkmanager first so preview SDK packages such as android-37.0 are visible.
+    sdkmanager_bin="$(command -v sdkmanager)" && \
+    yes | "${sdkmanager_bin}" --licenses --sdk_root=/root || true && \
+    "${sdkmanager_bin}" --sdk_root=/root --channel=3 "cmdline-tools;latest" && \
+    sdkmanager_bin="/root/cmdline-tools/latest/bin/sdkmanager" && \
+    yes | "${sdkmanager_bin}" --licenses --sdk_root=/root && \
+    "${sdkmanager_bin}" --sdk_root=/root --channel=3 \
         "platforms;android-${API_LEVEL}" \
         "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" \
-        "emulator" \
-        --sdk_root=/root && \
+        "emulator" && \
     \
     # Download ChromeDriver (smart fallback)
     (wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" || \
