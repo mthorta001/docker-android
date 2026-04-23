@@ -309,7 +309,7 @@ main() {
     
     if [[ -z "${ANDROID_VERSION:-}" ]]; then
         log_error "ANDROID_VERSION environment variable is required for builds"
-        log_error "Supported versions: 12.0, 14.0, 15.0, 16.0"
+        log_error "Supported versions: 12.0, 14.0, 15.0, 16.0, 17.0_16k"
         exit 1
     fi
     

@@ -156,6 +156,7 @@ get_api_level() {
         "14.0") echo "34" ;;
         "15.0") echo "35" ;;
         "16.0") echo "36" ;;
+        "17.0_16k") echo "37.0" ;;
         *) echo "" ;;
     esac
 }
@@ -177,6 +178,7 @@ get_chromedriver_version() {
         "14.0") echo "114.0.5735.90" ;;
         "15.0") echo "114.0.5735.90" ;;
         "16.0") echo "137.0.7151.70" ;;
+        "17.0_16k") echo "137.0.7151.70" ;;
         *) echo "" ;;
     esac
 }
@@ -184,6 +186,7 @@ get_chromedriver_version() {
 get_img_type() {
     case "$1" in
         5.0.1|5.1.1) echo "default" ;;
+        *_16k) echo "google_apis_ps16k" ;;
         *) echo "google_apis" ;;
     esac
 }
