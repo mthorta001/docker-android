@@ -130,7 +130,7 @@ def get_avd_abi():
     16k package names use tags like 'google_apis_ps16k', but avdmanager still expects
     the base tag such as 'google_apis/x86_64'.
     """
-    img_tag = IMG_TYPE.removesuffix('_ps16k')
+    img_tag = IMG_TYPE[:-6] if IMG_TYPE.endswith('_ps16k') else IMG_TYPE
     return f'{img_tag}/{SYS_IMG}'
 
 
