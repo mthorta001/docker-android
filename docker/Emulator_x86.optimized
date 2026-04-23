@@ -1,6 +1,6 @@
 FROM rcswain/appium:latest
 
-LABEL maintainer "Budi Utomo <budtmo.os@gmail.com>"
+LABEL maintainer="Budi Utomo <budtmo.os@gmail.com>"
 
 #=============
 # Set WORKDIR
@@ -10,7 +10,7 @@ WORKDIR /root
 #======================
 # Build Arguments
 #======================
-ARG TOKEN=xxx
+ARG TOKEN
 ARG ANDROID_VERSION=8.1
 ARG API_LEVEL=27
 ARG PROCESSOR=x86
