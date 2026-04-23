@@ -73,6 +73,7 @@ RUN apt-get -qqy update && apt-get -qqy install --no-install-recommends \
     python-numpy \
     net-tools \
     jq \
+    openjdk-17-jre-headless \
     qemu-kvm \
     libvirt-daemon-system \
     libvirt-clients \
@@ -125,10 +126,13 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     GA_TRACKING_ID=UA-133466903-1 \
     GA_API_VERSION="1" \
     APP_RELEASE_VERSION=$APP_RELEASE_VERSION \
-    APP_TYPE=Emulator
+    APP_TYPE=Emulator \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+    PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:${PATH}
 # ENV PATH ${PATH}:${ANDROID_HOME}/build-tools
 
 RUN set -eux; \
+    java -version; \
     sdkmanager_bin="$(command -v sdkmanager)"; \
     yes | "${sdkmanager_bin}" --licenses --sdk_root=/root || true; \
     "${sdkmanager_bin}" --sdk_root=/root --channel=3 "cmdline-tools;latest"; \

@@ -40,6 +40,7 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     GA_API_VERSION="1" \
     APP_RELEASE_VERSION=$APP_RELEASE_VERSION \
     APP_TYPE=Emulator \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
     DISPLAY=:0 \
     SCREEN=0 \
     SCREEN_WIDTH=1600 \
@@ -50,6 +51,7 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     TIMEOUT=1 \
     VIDEO_PATH=/tmp/video \
     LOG_PATH=/var/log/supervisor \
+    PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:${PATH} \
     QTWEBENGINE_DISABLE_SANDBOX=1 \
     NOVNC_SHA="b403cb92fb8de82d04f305b4f14fa978003890d7" \
     WEBSOCKIFY_SHA="558a6439f14b0d85a31145541745e25c255d576b"
@@ -78,6 +80,7 @@ RUN set -ex && \
         python3-numpy \
         net-tools \
         jq \
+        openjdk-17-jre-headless \
         # KVM packages (essential for emulator)
         qemu-kvm \
         libvirt-daemon-system \
@@ -98,6 +101,7 @@ RUN set -ex && \
     rm -f noVNC.zip websockify.zip && \
     \
     # Update sdkmanager first so preview SDK packages such as android-37.0 are visible.
+    java -version && \
     sdkmanager_bin="$(command -v sdkmanager)" && \
     yes | "${sdkmanager_bin}" --licenses --sdk_root=/root || true && \
     "${sdkmanager_bin}" --sdk_root=/root --channel=3 "cmdline-tools;latest" && \
