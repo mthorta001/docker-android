@@ -126,13 +126,12 @@ logger.info('Android version: {version} \n'
 def get_avd_abi():
     """
     Get the ABI for avdmanager -b parameter.
-    For 16k page size versions, we need to use 'page_size_16kb/x86_64' format.
-    For other versions, we need to use 'img_type/sys_img' format like 'google_apis/x86_64'.
+    avdmanager expects the normalized tag/abi pair for the selected system image.
+    16k package names use tags like 'google_apis_ps16k', but avdmanager still expects
+    the base tag such as 'google_apis/x86_64'.
     """
-    if ANDROID_VERSION.endswith('_16k'):
-        return f'page_size_16kb/{SYS_IMG}'
-    else:
-        return f'{IMG_TYPE}/{SYS_IMG}'
+    img_tag = IMG_TYPE.removesuffix('_ps16k')
+    return f'{img_tag}/{SYS_IMG}'
 
 
 def prepare_avd(device: str, avd_name: str, dp_size: str):
