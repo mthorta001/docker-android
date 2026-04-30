@@ -70,6 +70,7 @@ RUN apt-get -qqy update && apt-get -qqy install --no-install-recommends \
     openbox \
     feh \
     menu \
+    python3 \
     python-numpy \
     net-tools \
     jq \
@@ -97,7 +98,8 @@ RUN  wget -nv -O noVNC.zip "https://github.com/kanaka/noVNC/archive/${NOVNC_SHA}
  && unzip -x websockify.zip \
  && mv websockify-${WEBSOCKIFY_SHA} ./noVNC/utils/websockify \
  && rm websockify.zip \
- && ln noVNC/vnc_auto.html noVNC/index.html
+ && ln noVNC/vnc_auto.html noVNC/index.html \
+ && ln -sf /usr/bin/python3 /usr/bin/python
 
 #======================
 # Install SDK packages

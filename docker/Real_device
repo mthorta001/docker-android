@@ -62,6 +62,7 @@ RUN apt-get -qqy update && apt-get -qqy install --no-install-recommends \
     x11vnc \
     openbox \
     feh \
+    python3 \
     python-xdg \
     menu \
     python-numpy \
@@ -114,7 +115,8 @@ RUN  wget -nv -O noVNC.zip "https://github.com/kanaka/noVNC/archive/${NOVNC_SHA}
  && unzip -x websockify.zip \
  && mv websockify-${WEBSOCKIFY_SHA} ./noVNC/utils/websockify \
  && rm websockify.zip \
- && ln noVNC/vnc_auto.html noVNC/index.html
+ && ln noVNC/vnc_auto.html noVNC/index.html \
+ && ln -sf /usr/bin/python3 /usr/bin/python
 
 #================================================ 
 # noVNC Default Configurations

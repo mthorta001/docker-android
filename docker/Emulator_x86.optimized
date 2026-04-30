@@ -77,6 +77,7 @@ RUN set -ex && \
         x11vnc \
         openbox \
         feh \
+        python3 \
         python3-numpy \
         net-tools \
         jq \
@@ -98,6 +99,7 @@ RUN set -ex && \
     mv noVNC-${NOVNC_SHA} noVNC && \
     mv websockify-${WEBSOCKIFY_SHA} ./noVNC/utils/websockify && \
     ln noVNC/vnc_auto.html noVNC/index.html && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
     rm -f noVNC.zip websockify.zip && \
     \
     # Update sdkmanager first so preview SDK packages such as android-37.0 are visible.
