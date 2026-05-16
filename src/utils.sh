@@ -131,11 +131,78 @@ EOF
   http_body=$(echo "$response" | sed -e 's/HTTP_STATUS\:.*//g')
   http_status=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
   echo "$(date "+%F %T") Response body: $http_body"
-  if [ "$http_status" -eq 200 ]; then
+  if [ "$http_status" = "200" ] || [ "$http_status" = "201" ]; then
     echo "$(date "+%F %T") Capability registration successful"
+    return 0
   else
     echo "$(date "+%F %T") Capability registration failed with status: $http_status"
+    return 1
   fi
+}
+
+function is_capability_registered() {
+  local appium_url="http://$HOST_IP:$APPIUM_PORT/"
+  local response
+  local match_count
+
+  response=$(curl -s --max-time 10 "$DEVICE_SPY?udid=$UDID")
+  match_count=$(echo "$response" | jq -r \
+    --arg udid "$UDID" \
+    --arg appium_url "$appium_url" \
+    '[.data[]? | select(.capabilities.udid == $udid and .appiumUrl == $appium_url)] | length' 2>/dev/null)
+
+  if [[ "$match_count" =~ ^[0-9]+$ ]] && [ "$match_count" -gt 0 ]; then
+    return 0
+  fi
+
+  echo "$(date "+%F %T") Capability registration check did not find $UDID on $appium_url"
+  return 1
+}
+
+capability_register_failed_count=0
+capability_register_alert_sent=false
+
+function reset_capability_register_failure_state() {
+  capability_register_failed_count=0
+  capability_register_alert_sent=false
+}
+
+function get_capability_register_alert_threshold() {
+  local threshold=${CAPABILITY_REGISTER_ALERT_THRESHOLD:-5}
+  if [[ "$threshold" =~ ^[0-9]+$ ]] && [ "$threshold" -gt 0 ]; then
+    echo "$threshold"
+  else
+    echo 5
+  fi
+}
+
+function handle_capability_register_failure() {
+  local threshold
+  threshold=$(get_capability_register_alert_threshold)
+  capability_register_failed_count=$((capability_register_failed_count + 1))
+  echo "$(date "+%F %T") Capability registration failed count: $capability_register_failed_count/$threshold"
+
+  if [ "$capability_register_failed_count" -ge "$threshold" ] && [ "$capability_register_alert_sent" != true ]; then
+    botman_team "$HOST_IP:$TARGET_PORT $UDID capability registration failed $capability_register_failed_count times, device-spy may be unavailable or registration payload is rejected"
+    capability_register_alert_sent=true
+  fi
+}
+
+function ensure_capability_registered() {
+  if is_capability_registered; then
+    echo "$(date "+%F %T") Capability registration exists for $UDID"
+    reset_capability_register_failure_state
+    return 0
+  fi
+
+  echo "$(date "+%F %T") Capability registration missing for $UDID, re-registering"
+  if register_capability; then
+    reset_capability_register_failure_state
+    return 0
+  fi
+
+  handle_capability_register_failure
+  return 1
 }
 
 # https://stackoverflow.com/questions/60444428/android-skip-chrome-welcome-screen-using-adb
@@ -370,9 +437,16 @@ handle_chrome_alert
 echo "$(date "+%F %T") start while checking..."
 no_device_count=0
 max_no_device_count=5
+capability_check_interval=${CAPABILITY_CHECK_INTERVAL:-300}
+last_capability_check_at=$(date +%s)
 while true; do
   if health_check_adb_devices; then
     handle_not_responding
+    current_time=$(date +%s)
+    if [ $((current_time - last_capability_check_at)) -ge "$capability_check_interval" ]; then
+      ensure_capability_registered
+      last_capability_check_at=$current_time
+    fi
 
   # wifi monitor has implement on mthor code
   # after case failed
