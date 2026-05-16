@@ -159,14 +159,50 @@ function is_capability_registered() {
   return 1
 }
 
+capability_register_failed_count=0
+capability_register_alert_sent=false
+
+function reset_capability_register_failure_state() {
+  capability_register_failed_count=0
+  capability_register_alert_sent=false
+}
+
+function get_capability_register_alert_threshold() {
+  local threshold=${CAPABILITY_REGISTER_ALERT_THRESHOLD:-5}
+  if [[ "$threshold" =~ ^[0-9]+$ ]] && [ "$threshold" -gt 0 ]; then
+    echo "$threshold"
+  else
+    echo 5
+  fi
+}
+
+function handle_capability_register_failure() {
+  local threshold
+  threshold=$(get_capability_register_alert_threshold)
+  capability_register_failed_count=$((capability_register_failed_count + 1))
+  echo "$(date "+%F %T") Capability registration failed count: $capability_register_failed_count/$threshold"
+
+  if [ "$capability_register_failed_count" -ge "$threshold" ] && [ "$capability_register_alert_sent" != true ]; then
+    botman_team "$HOST_IP:$TARGET_PORT $UDID capability registration failed $capability_register_failed_count times, device-spy may be unavailable or registration payload is rejected"
+    capability_register_alert_sent=true
+  fi
+}
+
 function ensure_capability_registered() {
   if is_capability_registered; then
     echo "$(date "+%F %T") Capability registration exists for $UDID"
+    reset_capability_register_failure_state
     return 0
   fi
 
   echo "$(date "+%F %T") Capability registration missing for $UDID, re-registering"
-  register_capability
+  if register_capability; then
+    reset_capability_register_failure_state
+    return 0
+  fi
+
+  handle_capability_register_failure
+  return 1
 }
 
 # https://stackoverflow.com/questions/60444428/android-skip-chrome-welcome-screen-using-adb
