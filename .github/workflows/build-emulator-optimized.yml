@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        android: ["12.0", "14.0", "15.0", "16.0"]
+        android: ["12.0", "14.0", "15.0", "16.0", "16.0_16k", "17.0_16k"]
     env:
       ANDROID_VERSION: ${{ matrix.android }}
       TRAVIS_TAG: ${{ github.event.inputs.tags }}

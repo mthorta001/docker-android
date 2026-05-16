@@ -93,8 +93,29 @@ function unlock_device() {
       -X DELETE "$MTHOR_UNLOCK_DEVICE"
 }
 
+# parse android version and device name
+function parse_android_version_and_device() {
+  # Check if ANDROID_VERSION contains a variant suffix (e.g., "17.0_16k")
+  if [[ "$ANDROID_VERSION" == *"_"* ]]; then
+    # Split by underscore
+    IFS='_' read -r version_part suffix_part <<< "$ANDROID_VERSION"
+    
+    # Update ANDROID_VERSION to only contain the version part
+    ANDROID_VERSION="$version_part"
+    
+    # Update DEVICE to include the suffix (e.g., "pixel" becomes "pixel-16k")
+    DEVICE="${DEVICE}-${suffix_part}"
+    
+    echo "$(date "+%F %T") Parsed ANDROID_VERSION: $ANDROID_VERSION, DEVICE: $DEVICE"
+  else
+    echo "$(date "+%F %T") ANDROID_VERSION does not contain underscore, using as-is: $ANDROID_VERSION"
+  fi
+}
 # register capability
 function register_capability() {
+  # Parse android version and device name before registration
+  parse_android_version_and_device
+
   echo "$(date "+%F %T") register capability of container: emulator$APPIUM_PORT"
   response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
     -H "accept: application/json" \

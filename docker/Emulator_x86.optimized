@@ -1,6 +1,6 @@
 FROM rcswain/appium:latest
 
-LABEL maintainer "Budi Utomo <budtmo.os@gmail.com>"
+LABEL maintainer="Budi Utomo <budtmo.os@gmail.com>"
 
 #=============
 # Set WORKDIR
@@ -10,7 +10,7 @@ WORKDIR /root
 #======================
 # Build Arguments
 #======================
-ARG TOKEN=xxx
+ARG TOKEN
 ARG ANDROID_VERSION=8.1
 ARG API_LEVEL=27
 ARG PROCESSOR=x86
@@ -40,6 +40,7 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     GA_API_VERSION="1" \
     APP_RELEASE_VERSION=$APP_RELEASE_VERSION \
     APP_TYPE=Emulator \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
     DISPLAY=:0 \
     SCREEN=0 \
     SCREEN_WIDTH=1600 \
@@ -50,6 +51,7 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     TIMEOUT=1 \
     VIDEO_PATH=/tmp/video \
     LOG_PATH=/var/log/supervisor \
+    PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:${PATH} \
     QTWEBENGINE_DISABLE_SANDBOX=1 \
     NOVNC_SHA="b403cb92fb8de82d04f305b4f14fa978003890d7" \
     WEBSOCKIFY_SHA="558a6439f14b0d85a31145541745e25c255d576b"
@@ -75,9 +77,11 @@ RUN set -ex && \
         x11vnc \
         openbox \
         feh \
+        python3 \
         python3-numpy \
         net-tools \
         jq \
+        openjdk-17-jre-headless \
         # KVM packages (essential for emulator)
         qemu-kvm \
         libvirt-daemon-system \
@@ -95,15 +99,25 @@ RUN set -ex && \
     mv noVNC-${NOVNC_SHA} noVNC && \
     mv websockify-${WEBSOCKIFY_SHA} ./noVNC/utils/websockify && \
     ln noVNC/vnc_auto.html noVNC/index.html && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
     rm -f noVNC.zip websockify.zip && \
     \
-    # Accept Android SDK licenses and install components
-    yes | sdkmanager --licenses --sdk_root=/root && \
-    sdkmanager --no_https \
+    # Update sdkmanager first so preview SDK packages such as android-37.0 are visible.
+    java -version && \
+    sdkmanager_bin="$(command -v sdkmanager)" && \
+    yes | "${sdkmanager_bin}" --licenses --sdk_root=/root || true && \
+    "${sdkmanager_bin}" --sdk_root=/root --channel=3 "cmdline-tools;latest" && \
+    sdkmanager_dir="$(find /root/cmdline-tools -maxdepth 1 -mindepth 1 -type d -name 'latest*' | sort -V | tail -n1)" && \
+    if [ "${sdkmanager_dir}" != "/root/cmdline-tools/latest" ]; then \
+        rm -rf /root/cmdline-tools/latest && \
+        mv "${sdkmanager_dir}" /root/cmdline-tools/latest; \
+    fi && \
+    sdkmanager_bin="/root/cmdline-tools/latest/bin/sdkmanager" && \
+    yes | "${sdkmanager_bin}" --licenses --sdk_root=/root && \
+    "${sdkmanager_bin}" --sdk_root=/root --channel=3 \
         "platforms;android-${API_LEVEL}" \
         "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" \
-        "emulator" \
-        --sdk_root=/root && \
+        "emulator" && \
     \
     # Download ChromeDriver (smart fallback)
     (wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" || \

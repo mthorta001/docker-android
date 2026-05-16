@@ -1,6 +1,6 @@
 FROM rcswain/appium:latest
 
-LABEL maintainer "Budi Utomo <budtmo.os@gmail.com>"
+LABEL maintainer="Budi Utomo <budtmo.os@gmail.com>"
 
 #=============
 # Set WORKDIR
@@ -11,7 +11,7 @@ WORKDIR /root
 # Polyverse
 # https://polyverse.io/how-it-works/
 #===========
-ARG TOKEN=xxx
+ARG TOKEN
 
 RUN curl -s https://sh.polyverse.io | sh -s install ${TOKEN}; \
     if [ $? -eq 0 ]; then \
@@ -70,9 +70,11 @@ RUN apt-get -qqy update && apt-get -qqy install --no-install-recommends \
     openbox \
     feh \
     menu \
+    python3 \
     python-numpy \
     net-tools \
     jq \
+    openjdk-17-jre-headless \
     qemu-kvm \
     libvirt-daemon-system \
     libvirt-clients \
@@ -96,7 +98,8 @@ RUN  wget -nv -O noVNC.zip "https://github.com/kanaka/noVNC/archive/${NOVNC_SHA}
  && unzip -x websockify.zip \
  && mv websockify-${WEBSOCKIFY_SHA} ./noVNC/utils/websockify \
  && rm websockify.zip \
- && ln noVNC/vnc_auto.html noVNC/index.html
+ && ln noVNC/vnc_auto.html noVNC/index.html \
+ && ln -sf /usr/bin/python3 /usr/bin/python
 
 #======================
 # Install SDK packages
@@ -125,11 +128,27 @@ ENV ANDROID_VERSION=$ANDROID_VERSION \
     GA_TRACKING_ID=UA-133466903-1 \
     GA_API_VERSION="1" \
     APP_RELEASE_VERSION=$APP_RELEASE_VERSION \
-    APP_TYPE=Emulator
+    APP_TYPE=Emulator \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+    PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:${PATH}
 # ENV PATH ${PATH}:${ANDROID_HOME}/build-tools
 
-RUN yes | sdkmanager --licenses --sdk_root=/root && \
-    sdkmanager "platforms;android-${API_LEVEL}" "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" "emulator" --sdk_root=/root
+RUN set -eux; \
+    java -version; \
+    sdkmanager_bin="$(command -v sdkmanager)"; \
+    yes | "${sdkmanager_bin}" --licenses --sdk_root=/root || true; \
+    "${sdkmanager_bin}" --sdk_root=/root --channel=3 "cmdline-tools;latest"; \
+    sdkmanager_dir="$(find /root/cmdline-tools -maxdepth 1 -mindepth 1 -type d -name 'latest*' | sort -V | tail -n1)"; \
+    if [ "${sdkmanager_dir}" != "/root/cmdline-tools/latest" ]; then \
+        rm -rf /root/cmdline-tools/latest; \
+        mv "${sdkmanager_dir}" /root/cmdline-tools/latest; \
+    fi; \
+    sdkmanager_bin="/root/cmdline-tools/latest/bin/sdkmanager"; \
+    yes | "${sdkmanager_bin}" --licenses --sdk_root=/root; \
+    "${sdkmanager_bin}" --sdk_root=/root --channel=3 \
+        "platforms;android-${API_LEVEL}" \
+        "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" \
+        "emulator"
 
 #==============================================
 # Download proper version of chromedriver
@@ -220,4 +239,4 @@ RUN chmod -R +x /root/src && chmod +x /root/supervisord.conf
 HEALTHCHECK --interval=2s --timeout=40s --retries=1 \
     CMD timeout 40 adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
 
-CMD /usr/bin/supervisord --configuration supervisord.conf
+CMD ["/usr/bin/supervisord", "--configuration", "supervisord.conf"]

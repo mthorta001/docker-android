@@ -77,6 +77,36 @@ class TestApp(TestCase):
     def test_invalid_format(self):
         self.assertEqual(app.convert_str_to_bool(True), None)
 
+    def test_get_avd_abi_for_standard_image(self):
+        original_android_version = app.ANDROID_VERSION
+        original_sys_img = app.SYS_IMG
+        original_img_type = app.IMG_TYPE
+
+        try:
+            app.ANDROID_VERSION = '16.0'
+            app.SYS_IMG = 'x86_64'
+            app.IMG_TYPE = 'google_apis'
+            self.assertEqual(app.get_avd_abi(), 'google_apis/x86_64')
+        finally:
+            app.ANDROID_VERSION = original_android_version
+            app.SYS_IMG = original_sys_img
+            app.IMG_TYPE = original_img_type
+
+    def test_get_avd_abi_for_16k_image(self):
+        original_android_version = app.ANDROID_VERSION
+        original_sys_img = app.SYS_IMG
+        original_img_type = app.IMG_TYPE
+
+        try:
+            app.ANDROID_VERSION = '17.0_16k'
+            app.SYS_IMG = 'x86_64'
+            app.IMG_TYPE = 'google_apis_ps16k'
+            self.assertEqual(app.get_avd_abi(), 'google_apis/x86_64')
+        finally:
+            app.ANDROID_VERSION = original_android_version
+            app.SYS_IMG = original_sys_img
+            app.IMG_TYPE = original_img_type
+
     @mock.patch('src.app.prepare_avd')
     @mock.patch('builtins.open')
     @mock.patch('subprocess.Popen')
