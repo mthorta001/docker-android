@@ -131,11 +131,42 @@ EOF
   http_body=$(echo "$response" | sed -e 's/HTTP_STATUS\:.*//g')
   http_status=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
   echo "$(date "+%F %T") Response body: $http_body"
-  if [ "$http_status" -eq 200 ]; then
+  if [ "$http_status" = "200" ] || [ "$http_status" = "201" ]; then
     echo "$(date "+%F %T") Capability registration successful"
+    return 0
   else
     echo "$(date "+%F %T") Capability registration failed with status: $http_status"
+    return 1
   fi
+}
+
+function is_capability_registered() {
+  local appium_url="http://$HOST_IP:$APPIUM_PORT/"
+  local response
+  local match_count
+
+  response=$(curl -s --max-time 10 "$DEVICE_SPY?udid=$UDID")
+  match_count=$(echo "$response" | jq -r \
+    --arg udid "$UDID" \
+    --arg appium_url "$appium_url" \
+    '[.data[]? | select(.capabilities.udid == $udid and .appiumUrl == $appium_url)] | length' 2>/dev/null)
+
+  if [[ "$match_count" =~ ^[0-9]+$ ]] && [ "$match_count" -gt 0 ]; then
+    return 0
+  fi
+
+  echo "$(date "+%F %T") Capability registration check did not find $UDID on $appium_url"
+  return 1
+}
+
+function ensure_capability_registered() {
+  if is_capability_registered; then
+    echo "$(date "+%F %T") Capability registration exists for $UDID"
+    return 0
+  fi
+
+  echo "$(date "+%F %T") Capability registration missing for $UDID, re-registering"
+  register_capability
 }
 
 # https://stackoverflow.com/questions/60444428/android-skip-chrome-welcome-screen-using-adb
@@ -370,9 +401,16 @@ handle_chrome_alert
 echo "$(date "+%F %T") start while checking..."
 no_device_count=0
 max_no_device_count=5
+capability_check_interval=${CAPABILITY_CHECK_INTERVAL:-300}
+last_capability_check_at=$(date +%s)
 while true; do
   if health_check_adb_devices; then
     handle_not_responding
+    current_time=$(date +%s)
+    if [ $((current_time - last_capability_check_at)) -ge "$capability_check_interval" ]; then
+      ensure_capability_registered
+      last_capability_check_at=$current_time
+    fi
 
   # wifi monitor has implement on mthor code
   # after case failed
