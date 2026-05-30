@@ -5,54 +5,24 @@ set -euo pipefail  # Strict mode: exit on error, exit on undefined variable, exi
 # Constants definition
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly IMAGE="${DOCKER_ORG:-rcswain}/docker-android"
-readonly DEFAULT_PROCESSOR="x86_64"
+
+# All per-version build configuration (API level, ChromeDriver version, image
+# type, browser, processor, system image and the supported-version list) lives
+# in src/versions.py -- the single source of truth shared with the Python code.
+# These thin wrappers just delegate to its CLI so the data is never duplicated
+# (and never drifts) between Bash and Python.
+versions_cli() {
+    (cd "$SCRIPT_DIR" && python3 -m src.versions "$@")
+}
 
 # Get API level for Android version
 get_api_level() {
-    case "$1" in
-        "5.0.1") echo "21" ;;
-        "5.1.1") echo "22" ;;
-        "6.0") echo "23" ;;
-        "7.0") echo "24" ;;
-        "7.1.1") echo "25" ;;
-        "8.0") echo "26" ;;
-        "8.1") echo "27" ;;
-        "9.0") echo "28" ;;
-        "10.0") echo "29" ;;
-        "11.0") echo "30" ;;
-        "12.0") echo "31" ;;
-        "13.0") echo "33" ;;
-        "14.0") echo "34" ;;
-        "15.0") echo "35" ;;
-        "16.0") echo "36" ;;
-        "16.0_16k") echo "36" ;;
-        "17.0_16k") echo "37.0" ;;
-        *) echo "" ;;
-    esac
+    versions_cli api_level "$1"
 }
 
 # Get ChromeDriver version for Android version
 get_chromedriver_version() {
-    case "$1" in
-        "5.0.1") echo "2.21" ;;
-        "5.1.1") echo "2.13" ;;
-        "6.0") echo "2.18" ;;
-        "7.0") echo "2.23" ;;
-        "7.1.1") echo "2.28" ;;
-        "8.0") echo "2.31" ;;
-        "8.1") echo "2.33" ;;
-        "9.0") echo "2.40" ;;
-        "10.0") echo "74.0.3729.6" ;;
-        "11.0") echo "83.0.4103.39" ;;
-        "12.0") echo "92.0.4515.107" ;;
-        "13.0") echo "104.0.5112.29" ;;
-        "14.0") echo "114.0.5735.90" ;;
-        "15.0") echo "114.0.5735.90" ;;
-        "16.0") echo "137.0.7151.70" ;;
-        "16.0_16k") echo "137.0.7151.70" ;;
-        "17.0_16k") echo "137.0.7151.70" ;;
-        *) echo "" ;;
-    esac
+    versions_cli chromedriver "$1"
 }
 
 # Check if Android version is supported
@@ -87,7 +57,7 @@ log_push() {
 
 # Get supported versions string
 get_supported_versions_string() {
-    echo "5.0.1|5.1.1|6.0|7.0|7.1.1|8.0|8.1|9.0|10.0|11.0|12.0|13.0|14.0|15.0|16.0|16.0_16k|17.0_16k"
+    versions_cli supported
 }
 
 # Show usage help
@@ -157,7 +127,8 @@ get_user_input() {
 # Parse Android versions list
 parse_android_versions() {
     if [[ "$ANDROID_VERSION" == "all" ]]; then
-        ANDROID_VERSIONS=(5.0.1 5.1.1 6.0 7.0 7.1.1 8.0 8.1 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 16.0_16k 17.0_16k)
+        # shellcheck disable=SC2207
+        ANDROID_VERSIONS=($(versions_cli list))
     else
         ANDROID_VERSIONS=("$ANDROID_VERSION")
     fi
@@ -167,36 +138,22 @@ parse_android_versions() {
 
 # Get image type
 get_img_type() {
-    case "$1" in
-        5.0.1|5.1.1) echo "default" ;;
-        *_16k) echo "google_apis_ps16k" ;;
-        *) echo "google_apis" ;;
-    esac
+    versions_cli img_type "$1"
 }
 
 # Get browser type
 get_browser() {
-    case "$1" in
-        5.0.1|5.1.1|6.0) echo "browser" ;;
-        *) echo "chrome" ;;
-    esac
+    versions_cli browser "$1"
 }
 
 # Get processor type
 get_processor() {
-    case "$1" in
-        9.0) echo "x86_64" ;;
-        *) echo "$DEFAULT_PROCESSOR" ;;
-    esac
+    versions_cli processor "$1"
 }
 
-# Get system image type  
+# Get system image type
 get_sys_img() {
-    case "$1" in
-        8.1) echo "x86" ;;
-        9.0) echo "x86_64" ;;
-        *) echo "$DEFAULT_PROCESSOR" ;;
-    esac
+    versions_cli sys_img "$1"
 }
 
 # Wait for container health check

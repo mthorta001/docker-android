@@ -114,7 +114,7 @@ repos:
 | 3 | `mypy` + `black`/`isort` 接入 Python | 低 | 中高 | ⏳ 部分（flake8 已绿，mypy/black/isort 配置就绪待启用） |
 | 4 | `Makefile` 统一入口 + CI 独立 lint job | 中 | 中 | ✅ 已落地 |
 | 5 | 拆分大脚本 + 补 `app.py` 单元测试 + `bats` Shell 测试 | 中高 | 中 | ✅ 已落地（首批，见 §4） |
-| 6 | 配置集中化（消除 Shell/Python 重复） | 中 | 中 | ⏳ 部分（版本映射已收敛，见 §3） |
+| 6 | 配置集中化（消除 Shell/Python 重复） | 中 | 中 | ✅ 已落地（版本映射 + per-version 构建配置全部收敛到 `src/versions.py`，见 §4） |
 
 ---
 
@@ -137,7 +137,7 @@ repos:
 
 | 文件 | 说明 |
 |------|------|
-| `release.sh` / `release_real.sh` / `release_geny.sh` | 主体是 `docker build/push` 编排，但夹杂参数解析和分支。若团队 Python 更熟可迁；否则保持 Shell + `shellcheck` 即可。 |
+| `release.sh` / `release_real.sh` / `release_geny.sh` | 主体是 `docker build/push` 编排，但夹杂参数解析和分支。若团队 Python 更熟可迁；否则保持 Shell + `shellcheck` 即可。注：`release.sh` / `build-optimized.sh` 中的 **per-version 配置已收敛到 `src/versions.py`**（见 §4 阶段 6），编排主体仍保留 Shell。 |
 
 ### 🔴 建议保持 Shell（改 Python 是负收益）
 
@@ -184,6 +184,19 @@ repos:
 
 > 说明：`utils.sh` 因含 `while true` 主循环 + 硬编码 token + 大量 `adb`/`curl` 副作用，**不宜整体拆分**；本批仅抽离可安全测试的纯逻辑函数，其余编排逻辑按 §3 红色分类保留 Shell。
 
+### 阶段 6：配置集中化（消除 Shell/Python 版本配置重复）
+
+把所有 **per-version 构建配置**收敛到 `src/versions.py` 这一**单一数据源**，彻底消除 Shell 与 Python（以及 Shell 之间）的重复维护与漂移：
+
+- 扩展 `src/versions.py`：在既有 `ANDROID_VERSION_MAP`（短→长映射）之外，新增 `API_LEVEL_MAP`、`CHROMEDRIVER_MAP`、`SUPPORTED_VERSIONS` 及查询函数 `get_api_level`/`get_chromedriver_version`/`get_img_type`/`get_browser`/`get_processor`/`get_sys_img`/`is_supported_version`；CLI 增加 `api_level|chromedriver|img_type|browser|processor|sys_img` 子命令与 `supported`（管道分隔）/`list`（空格分隔）。**仍刻意不 import `src.app`**。
+- 改造 `release.sh`：删除内联的 `get_api_level`/`get_chromedriver_version`/`get_img_type`/`get_browser`/`get_processor`/`get_sys_img` 的 bash `case`、硬编码的支持版本列表与 `ANDROID_VERSIONS=(...)` 全量数组，统一改为 `versions_cli`（`python3 -m src.versions ...`）；函数名/调用契约保持不变。
+- 改造 `build-optimized.sh`：删除“copied from release.sh”的重复 bash `case`（**该副本已漂移**——缺少 `16.0` / `16.0_16k` 条目），同样改为调用 `src/versions.py`。
+- 补单测 `src/tests/unit/test_versions.py`：覆盖全部新查询函数、`supported`/`list` 内容（断言 `16.0`/`16.0_16k` 在列、每个支持版本都有 API level）及新增 CLI 子命令的返回码。
+
+**验证**：`flake8 src` = 0；`pytest src/tests/unit` 全绿（48 passed，新增 10）；对全部 17 个版本的 6 项配置 CLI 输出与原 `release.sh` bash `case` 逐项一致；`release.sh` 包装函数经 `source` 调用验证行为不变。
+
+> 说明：`release.sh` 是最完整/权威的副本，故以其取值为准；这次顺带修正了 `build-optimized.sh` 已漂移的缺项。
+
 ---
 
 ## 5. 后续可按需推进项（Backlog）
@@ -198,7 +211,7 @@ repos:
 6. **设置覆盖率门槛**：`--cov-fail-under=N`，从现实基线起步逐步提高。
 7. **补 Python 单测**：`prepare_avd` / `appium_run` / `create_node_config`（mock `subprocess`）。
 8. **(进阶) bats Shell 测试（续）**：已对 `src/utils_lib.sh` 两个纯函数加 bats 测试（见 §4）；可继续为其它脚本中析出的纯逻辑补测。
-9. **配置集中化**：把 Shell 与 Python 共享的版本/镜像/设备信息收敛到单一配置源（JSON/YAML）。
+9. **配置集中化**：✅ 已落地——版本短→长映射与 per-version 构建配置（api_level/chromedriver/img_type/browser/processor/sys_img/支持版本列表）已全部收敛到 `src/versions.py`（见 §4）；`release.sh`、`build-optimized.sh` 均改为调用其 CLI。剩余可选项：设备/skin 等信息亦可按需收敛。
 
 ---
 
