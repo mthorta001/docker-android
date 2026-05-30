@@ -13,7 +13,8 @@ make install-hooks
 # Run everything manually
 make lint     # shellcheck + shfmt + flake8 + mypy
 make fmt      # auto-format shell (shfmt) and Python (isort + black)
-make test     # unit tests with coverage
+make test     # all tests: Python (pytest) + shell (bats)
+make test-shell  # shell unit tests only (bats)
 make help     # list all available targets
 ```
 
@@ -26,6 +27,7 @@ make help     # list all available targets
 | Python | `flake8`              | Lint (max line length 120)           |
 | Python | `mypy`                | Static type checking                 |
 | Python | `black` + `isort`     | Formatting & import ordering         |
+| Shell  | `bats`                | Unit tests for pure shell functions  |
 
 Configuration lives in `.shellcheckrc`, `setup.cfg` (flake8/pytest) and
 `.pre-commit-config.yaml`.
@@ -43,7 +45,18 @@ brew install shellcheck shfmt
 # Shell tools (Debian/Ubuntu)
 apt-get install -y shellcheck
 # shfmt: see https://github.com/mvdan/sh#shfmt
+
+# bats (shell unit tests): https://github.com/bats-core/bats-core
+brew install bats-core            # macOS
+apt-get install -y bats           # Debian/Ubuntu
 ```
+
+### Tests layout
+
+- Python unit tests: `src/tests/unit/` (run with `pytest`).
+- Shell unit tests: `src/tests/shell/*.bats` (run with `bats`). These cover the
+  pure-logic helpers extracted into `src/utils_lib.sh` (sourced by
+  `src/utils.sh`).
 
 ## Conventions
 

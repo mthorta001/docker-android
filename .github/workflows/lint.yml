@@ -42,3 +42,15 @@ jobs:
 
       - name: Run mypy
         run: mypy src --ignore-missing-imports
+
+  shell-tests:
+    name: Shell tests (bats)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up bats
+        uses: bats-core/bats-action@3.0.0
+
+      - name: Run bats
+        run: bats src/tests/shell

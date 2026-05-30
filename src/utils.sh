@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Load pure-logic helpers (parse_android_version_and_device,
+# get_capability_register_alert_threshold). They live in a separate, testable
+# library file; sourcing it keeps this entrypoint's behaviour unchanged.
+# shellcheck source=src/utils_lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/utils_lib.sh"
+
 function wait_emulator_to_be_ready() {
   boot_completed=false
   while [ "$boot_completed" == false ]; do
@@ -93,24 +99,8 @@ function unlock_device() {
       -X DELETE "$MTHOR_UNLOCK_DEVICE"
 }
 
-# parse android version and device name
-function parse_android_version_and_device() {
-  # Check if ANDROID_VERSION contains a variant suffix (e.g., "17.0_16k")
-  if [[ "$ANDROID_VERSION" == *"_"* ]]; then
-    # Split by underscore
-    IFS='_' read -r version_part suffix_part <<< "$ANDROID_VERSION"
-    
-    # Update ANDROID_VERSION to only contain the version part
-    ANDROID_VERSION="$version_part"
-    
-    # Update DEVICE to include the suffix (e.g., "pixel" becomes "pixel-16k")
-    DEVICE="${DEVICE}-${suffix_part}"
-    
-    echo "$(date "+%F %T") Parsed ANDROID_VERSION: $ANDROID_VERSION, DEVICE: $DEVICE"
-  else
-    echo "$(date "+%F %T") ANDROID_VERSION does not contain underscore, using as-is: $ANDROID_VERSION"
-  fi
-}
+# parse_android_version_and_device lives in src/utils_lib.sh (sourced above).
+
 # register capability
 function register_capability() {
   # Parse android version and device name before registration
@@ -188,14 +178,7 @@ function reset_capability_register_failure_state() {
   capability_register_alert_sent=false
 }
 
-function get_capability_register_alert_threshold() {
-  local threshold=${CAPABILITY_REGISTER_ALERT_THRESHOLD:-5}
-  if [[ "$threshold" =~ ^[0-9]+$ ]] && [ "$threshold" -gt 0 ]; then
-    echo "$threshold"
-  else
-    echo 5
-  fi
-}
+# get_capability_register_alert_threshold lives in src/utils_lib.sh (sourced above).
 
 function handle_capability_register_failure() {
   local threshold

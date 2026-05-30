@@ -1,4 +1,4 @@
-.PHONY: help install-hooks lint lint-shell lint-python fmt fmt-shell fmt-python test test-unit
+.PHONY: help install-hooks lint lint-shell lint-python fmt fmt-shell fmt-python test test-unit test-shell
 
 # Shell scripts to lint/format (all *.sh in the repo).
 SHELL_FILES := $(shell find . -type f -name '*.sh')
@@ -30,7 +30,10 @@ fmt-python: ## Format Python sources (isort + black)
 	isort --profile black --line-length 120 src
 	black --line-length 120 src
 
-test: test-unit ## Run unit tests with coverage
+test: test-unit test-shell ## Run all tests (Python + shell)
 
-test-unit: ## Run unit tests
+test-unit: ## Run Python unit tests
 	pytest src/tests/unit --cov=src --cov-report=term-missing
+
+test-shell: ## Run shell unit tests (bats)
+	bats src/tests/shell
