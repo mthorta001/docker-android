@@ -2,10 +2,9 @@
 
 > 本文档汇总了对 `docker-android` 项目在以下几个方面的分析与建议，便于团队**按需推进**：
 >
-> 1. 是否适合引入 / 重构为 Zig
-> 2. 如何系统性提升代码质量（lint / 格式化 / 测试 / 门禁）
-> 3. 哪些 Shell 脚本值得迁移到 Python、哪些应保留 Shell
-> 4. 已落地的改动与后续可推进项
+> 1. 如何系统性提升代码质量（lint / 格式化 / 测试 / 门禁）
+> 2. 哪些 Shell 脚本值得迁移到 Python、哪些应保留 Shell
+> 3. 已落地的改动与后续可推进项
 >
 > **结论先行**：质量提升的最大杠杆**不在“换语言”**，而在**给占比最大的 Shell 脚本补上静态检查（shellcheck）**，再用 **pre-commit + mypy + 统一 Makefile** 把检查链固化，并把**有逻辑、需测试的脚本**逐步收敛到 Python。
 
@@ -25,27 +24,7 @@
 
 ---
 
-## 1. 是否适合重构为 Zig？——不建议
-
-**这个项目几乎没有真正适合用 Zig 重构的地方。**
-
-### 不建议的原因
-
-- **没有热点**：全文没有循环计算、数据处理、解析大文件等 CPU/内存密集逻辑。`app.py` 里最“重”的操作只是逐行读 `config.ini`（`is_initialized`）。
-- **强依赖 shell 生态**：`record.sh` 用 `curl`/`jq`/`ffmpeg`，Bash 调用这些工具是最自然的；Zig 反而要手写一堆 `std.process.Child` 样板代码。
-- **可读性/可维护性会下降**：DevOps 团队更熟悉 Shell/Python；Zig 还需要编译步骤，与“脚本即改即用”的工作流冲突。
-- **Zig 生态缺位**：没有成熟的 Docker SDK、Selenium/Appium 客户端，等于自己重造轮子。
-
-### 仅供参考的边缘场景（价值有限）
-
-1. **小型 CLI 工具替代部分纯函数逻辑**：如版本号映射、UDID 解析等，可编译成静态无依赖小二进制。但这点逻辑用 Shell/Python 几行就够了，**收益不成比例**。
-2. **未来若出现高频低延迟处理**（如自定义视频帧抓取、二进制日志解析），那时 Zig 才有用武之地。**目前不存在**这种需求。
-
-> 一句话：**Zig 适合“写工具/写底层”，本项目是“用工具/编排流程”，两者错位，不建议重构。**
-
----
-
-## 2. 质量提升建议（按性价比从高到低）
+## 1. 质量提升建议（按性价比从高到低）
 
 ### 当前质量基线（已具备）
 
@@ -113,12 +92,12 @@ repos:
 | 2 | `.pre-commit-config.yaml`（shellcheck/shfmt/flake8/mypy） | 低 | 高 | ✅ 已落地 |
 | 3 | `mypy` + `black`/`isort` 接入 Python | 低 | 中高 | ⏳ 部分（flake8 已绿，mypy/black/isort 配置就绪待启用） |
 | 4 | `Makefile` 统一入口 + CI 独立 lint job | 中 | 中 | ✅ 已落地 |
-| 5 | 拆分大脚本 + 补 `app.py` 单元测试 + `bats` Shell 测试 | 中高 | 中 | ✅ 已落地（首批，见 §4） |
-| 6 | 配置集中化（消除 Shell/Python 重复） | 中 | 中 | ✅ 已落地（版本映射 + per-version 构建配置全部收敛到 `src/versions.py`，见 §4） |
+| 5 | 拆分大脚本 + 补 `app.py` 单元测试 + `bats` Shell 测试 | 中高 | 中 | ✅ 已落地（首批，见 §3） |
+| 6 | 配置集中化（消除 Shell/Python 重复） | 中 | 中 | ✅ 已落地（版本映射 + per-version 构建配置全部收敛到 `src/versions.py`，见 §3） |
 
 ---
 
-## 3. Shell 是否应迁移到 Python？——分类处理，而非全量重写
+## 2. Shell 是否应迁移到 Python？——分类处理，而非全量重写
 
 正确的判断标准不是“哪个语法更清晰”，而是**“这段脚本主要在做什么”**：
 
@@ -129,15 +108,15 @@ repos:
 
 | 文件 / 逻辑 | 为什么值得迁移 | 状态 |
 |------------|----------------|------|
-| `travis.sh` 的 `map_android_version`、`ANDROID_VERSION_MAP` | 纯版本映射 + 字符串判断；与 `src/app.py` 版本逻辑重叠，Shell/Python 各维护一份有漂移风险。收敛到 Python 一处 + 单测最划算。 | ✅ 已完成（见 §4） |
+| `travis.sh` 的 `map_android_version`、`ANDROID_VERSION_MAP` | 纯版本映射 + 字符串判断；与 `src/app.py` 版本逻辑重叠，Shell/Python 各维护一份有漂移风险。收敛到 Python 一处 + 单测最划算。 | ✅ 已完成（见 §3） |
 | `src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（解析 proxy URL、`IFS` 切分） | 字符串/URL 解析在 Bash 里很易错（引号、`sed`、`IFS`），Python 三行 `urllib.parse` 就清楚且可测。 | ⏳ 待推进 |
-| `app.py` 里残留的 shell 内联（如 `os.popen('ifconfig … \| grep … \| awk …')` 取 IP） | 已经在 Python 里了，却用 shell 管道实现，可换成原生 Python，顺手消除一处 shell 依赖。 | ✅ 已完成（见 §4 阶段 7） |
+| `app.py` 里残留的 shell 内联（如 `os.popen('ifconfig … \| grep … \| awk …')` 取 IP） | 已经在 Python 里了，却用 shell 管道实现，可换成原生 Python，顺手消除一处 shell 依赖。 | ✅ 已完成（见 §3 阶段 7） |
 
 ### 🟡 可迁可不迁（收益有限，看团队偏好）
 
 | 文件 | 说明 |
 |------|------|
-| `release.sh` / `release_real.sh` / `release_geny.sh` | 主体是 `docker build/push` 编排，但夹杂参数解析和分支。若团队 Python 更熟可迁；否则保持 Shell + `shellcheck` 即可。注：`release.sh` / `build-optimized.sh` 中的 **per-version 配置已收敛到 `src/versions.py`**（见 §4 阶段 6），编排主体仍保留 Shell。 |
+| `release.sh` / `release_real.sh` / `release_geny.sh` | 主体是 `docker build/push` 编排，但夹杂参数解析和分支。若团队 Python 更熟可迁；否则保持 Shell + `shellcheck` 即可。注：`release.sh` / `build-optimized.sh` 中的 **per-version 配置已收敛到 `src/versions.py`**（见 §3 阶段 6），编排主体仍保留 Shell。 |
 
 ### 🔴 建议保持 Shell（改 Python 是负收益）
 
@@ -155,7 +134,7 @@ repos:
 
 ---
 
-## 4. 已落地的改动（本系列工作成果）
+## 3. 已落地的改动（本系列工作成果）
 
 ### 阶段 1 & 2：Shell 静态检查与统一门禁
 
@@ -182,7 +161,7 @@ repos:
 
 **验证**：`flake8 src` = 0；`pytest src/tests/unit` 全绿（38 passed，新增 9）；6 条 bats 断言用等价 bash 逐条校验通过（本地未装 bats，CI 已配 bats-action）。
 
-> 说明：`utils.sh` 因含 `while true` 主循环 + 硬编码 token + 大量 `adb`/`curl` 副作用，**不宜整体拆分**；本批仅抽离可安全测试的纯逻辑函数，其余编排逻辑按 §3 红色分类保留 Shell。
+> 说明：`utils.sh` 因含 `while true` 主循环 + 硬编码 token + 大量 `adb`/`curl` 副作用，**不宜整体拆分**；本批仅抽离可安全测试的纯逻辑函数，其余编排逻辑按 §2 红色分类保留 Shell。
 
 ### 阶段 6：配置集中化（消除 Shell/Python 版本配置重复）
 
@@ -208,25 +187,25 @@ repos:
 
 - **build 脚本**（低风险）：`release_real.sh`、`release_geny.sh` 加 `set -euo pipefail`，并把 `set -u` 下会报错的未保护引用改为安全形式（`[ -z "${1:-}" ]`、`--build-arg TOKEN=${TOKEN:-}`），对齐 `release.sh` 既有写法。
 - **小型运行时脚本**：`src/record.sh` 加 `set -eo pipefail`（**不加 `-u`**——它由可空环境变量 `VIDEO_PATH`/`AUTO_RECORD`/`DISPLAY` 驱动）；并把 `stop()` 的 `kill $(...)` 改为「无 ffmpeg 进程时不调用 kill」，避免空参在 `set -e` 下中止脚本；`$@` → `"$@"`。
-- **复杂运行时入口刻意保留**：`src/appium.sh`（大量 `[ "$X" = true ]` 依赖可空变量 + `gmsaas`/`terraform`/`curl` 容错执行）与 `src/utils.sh`（`while true` 主循环 + 大量 `adb`/`curl` 副作用）若强加 `set -e`/`-u` 会改变生产入口行为且无法在容器外验证，按 §3🔴 分类**不强加严格模式**。
+- **复杂运行时入口刻意保留**：`src/appium.sh`（大量 `[ "$X" = true ]` 依赖可空变量 + `gmsaas`/`terraform`/`curl` 容错执行）与 `src/utils.sh`（`while true` 主循环 + 大量 `adb`/`curl` 副作用）若强加 `set -e`/`-u` 会改变生产入口行为且无法在容器外验证，按 §2🔴 分类**不强加严格模式**。
 
 **验证**：`flake8 src` = 0；`pytest src/tests/unit` 全绿（50 passed，新增 2）；`bash -n` 校验 `release_real.sh`/`release_geny.sh`/`record.sh` 通过；`py_compile` 通过。
 
 ---
 
-## 5. 后续可按需推进项（Backlog）
+## 4. 后续可按需推进项（Backlog）
 
 按建议优先级排列，团队可按需挑选：
 
-1. **清理 `app.py` 内 shell 内联**：✅ 已落地（见 §4 阶段 7）——`os.popen('ifconfig ...')` 取 IP 改为纯 Python `socket` 实现 `get_local_ip()` 并补单测。
+1. **清理 `app.py` 内 shell 内联**：✅ 已落地（见 §3 阶段 7）——`os.popen('ifconfig ...')` 取 IP 改为纯 Python `socket` 实现 `get_local_ip()` 并补单测。
 2. **迁移解析类逻辑到 Python + 单测**：`src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（proxy URL 解析）→ `src/` 下的 Python 函数。
-3. **推广 `set -euo pipefail`**：⏳ 部分落地（见 §4 阶段 7）——`release_real.sh`/`release_geny.sh` 已加 `set -euo pipefail`、`src/record.sh` 已加 `set -eo pipefail`；`src/utils.sh`、`src/appium.sh` 因属复杂运行时入口（可空变量 + 容错副作用），刻意保留以免负收益。
-4. **拆分巨型脚本（续）**：`utils.sh` 已抽出纯逻辑到 `src/utils_lib.sh`（见 §4）；`release.sh` / `appium.sh` 仍可按职责进一步拆分。
+3. **推广 `set -euo pipefail`**：⏳ 部分落地（见 §3 阶段 7）——`release_real.sh`/`release_geny.sh` 已加 `set -euo pipefail`、`src/record.sh` 已加 `set -eo pipefail`；`src/utils.sh`、`src/appium.sh` 因属复杂运行时入口（可空变量 + 容错副作用），刻意保留以免负收益。
+4. **拆分巨型脚本（续）**：`utils.sh` 已抽出纯逻辑到 `src/utils_lib.sh`（见 §3）；`release.sh` / `appium.sh` 仍可按职责进一步拆分。
 5. **启用 mypy / black / isort 门禁**：当前配置已就绪，待团队约定基线后在 CI 开启强制。
 6. **设置覆盖率门槛**：`--cov-fail-under=N`，从现实基线起步逐步提高。
 7. **补 Python 单测**：`prepare_avd` / `appium_run` / `create_node_config`（mock `subprocess`）。
-8. **(进阶) bats Shell 测试（续）**：已对 `src/utils_lib.sh` 两个纯函数加 bats 测试（见 §4）；可继续为其它脚本中析出的纯逻辑补测。
-9. **配置集中化**：✅ 已落地——版本短→长映射与 per-version 构建配置（api_level/chromedriver/img_type/browser/processor/sys_img/支持版本列表）已全部收敛到 `src/versions.py`（见 §4）；`release.sh`、`build-optimized.sh` 均改为调用其 CLI。剩余可选项：设备/skin 等信息亦可按需收敛。
+8. **(进阶) bats Shell 测试（续）**：已对 `src/utils_lib.sh` 两个纯函数加 bats 测试（见 §3）；可继续为其它脚本中析出的纯逻辑补测。
+9. **配置集中化**：✅ 已落地——版本短→长映射与 per-version 构建配置（api_level/chromedriver/img_type/browser/processor/sys_img/支持版本列表）已全部收敛到 `src/versions.py`（见 §3）；`release.sh`、`build-optimized.sh` 均改为调用其 CLI。剩余可选项：设备/skin 等信息亦可按需收敛。
 
 ---
 
