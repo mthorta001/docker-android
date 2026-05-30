@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import socket
 import subprocess
 
 from src import CONFIG_FILE, ROOT
@@ -88,6 +89,31 @@ def get_env_port_from_udid(default_port: str = "5554") -> str:
     else:
         logger.warning(f"UDID does not contain 'emulator-' prefix: {udid}, using as-is")
         return udid
+
+
+def get_local_ip() -> str:
+    """
+    Determine the primary local IP address of the container.
+
+    Replaces the previous shell pipeline
+    ``ifconfig eth0 | grep 'inet' | cut -d: -f2 | awk '{ print $2}'`` with a
+    pure-Python implementation that does not depend on ``ifconfig`` being
+    installed. It opens a UDP socket to a public address (no packets are
+    actually sent) so the OS picks the interface/IP used for outbound traffic.
+
+    :return: The local IP address, or an empty string if it cannot be resolved.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # The address does not need to be reachable; connecting a UDP socket
+        # only selects the outbound interface without sending traffic.
+        s.connect(('8.8.8.8', 80))
+        return s.getsockname()[0]
+    except OSError as err:
+        logger.warning('Could not determine local IP: {err}'.format(err=err))
+        return ''
+    finally:
+        s.close()
 
 
 def is_initialized(device_name) -> bool:
@@ -234,8 +260,7 @@ def appium_run(avd_name: str):
     grid_connect = convert_str_to_bool(str(os.getenv('CONNECT_TO_GRID', False)))
     logger.info('Connect to selenium grid? {connect}'.format(connect=grid_connect))
     if grid_connect:
-        # Ubuntu 16.04 used: ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'
-        local_ip = os.popen('ifconfig eth0 | grep \'inet\' | cut -d: -f2 | awk \'{ print $2}\'').read().strip()
+        local_ip = get_local_ip()
         try:
             mobile_web_test = convert_str_to_bool(str(os.getenv('MOBILE_WEB_TEST', False)))
             appium_host = os.getenv('APPIUM_HOST', local_ip)

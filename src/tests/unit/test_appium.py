@@ -29,31 +29,33 @@ class TestAppium(TestCase):
         app.appium_run(self.avd_name)
         self.assertTrue(mocked_subprocess.called)
 
-    @mock.patch('os.popen')
+    @mock.patch('src.app.get_local_ip')
     @mock.patch('subprocess.check_call')
-    def test_with_selenium_grid(self, mocked_os, mocked_subprocess):
+    def test_with_selenium_grid(self, mocked_subprocess, mocked_get_local_ip):
+        mocked_get_local_ip.return_value = '127.0.0.1'
         with mock.patch('src.app.create_node_config') as mocked_config:
             self.assertFalse(mocked_config.called)
-            self.assertFalse(mocked_os.called)
+            self.assertFalse(mocked_get_local_ip.called)
             self.assertFalse(mocked_subprocess.called)
             app.appium_run(self.avd_name)
             self.assertTrue(mocked_config.called)
-            self.assertTrue(mocked_os.called)
+            self.assertTrue(mocked_get_local_ip.called)
             self.assertTrue(mocked_subprocess.called)
 
-    @mock.patch('os.popen')
+    @mock.patch('src.app.get_local_ip')
     @mock.patch('subprocess.check_call')
     @mock.patch('src.app.logger')
-    def test_invalid_integer(self, mocked_logger, mocked_subprocess, mocked_os):
+    def test_invalid_integer(self, mocked_logger, mocked_subprocess, mocked_get_local_ip):
+        mocked_get_local_ip.return_value = '127.0.0.1'
         os.environ['APPIUM_PORT'] = 'test'
         with mock.patch('src.app.create_node_config') as mocked_config:
             self.assertFalse(mocked_config.called)
-            self.assertFalse(mocked_os.called)
+            self.assertFalse(mocked_get_local_ip.called)
             self.assertFalse(mocked_subprocess.called)
             app.appium_run(self.avd_name)
             # Should gracefully handle invalid port and use default 4723
             self.assertTrue(mocked_logger.warning.called)
-            self.assertTrue(mocked_os.called)
+            self.assertTrue(mocked_get_local_ip.called)
             self.assertTrue(mocked_subprocess.called)
             # Verify that the warning was logged about invalid port value
             warning_calls = [call for call in mocked_logger.warning.call_args_list

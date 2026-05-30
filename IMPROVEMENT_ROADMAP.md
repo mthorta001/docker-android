@@ -131,7 +131,7 @@ repos:
 |------------|----------------|------|
 | `travis.sh` 的 `map_android_version`、`ANDROID_VERSION_MAP` | 纯版本映射 + 字符串判断；与 `src/app.py` 版本逻辑重叠，Shell/Python 各维护一份有漂移风险。收敛到 Python 一处 + 单测最划算。 | ✅ 已完成（见 §4） |
 | `src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（解析 proxy URL、`IFS` 切分） | 字符串/URL 解析在 Bash 里很易错（引号、`sed`、`IFS`），Python 三行 `urllib.parse` 就清楚且可测。 | ⏳ 待推进 |
-| `app.py` 里残留的 shell 内联（如 `os.popen('ifconfig … \| grep … \| awk …')` 取 IP） | 已经在 Python 里了，却用 shell 管道实现，可换成原生 Python，顺手消除一处 shell 依赖。 | ⏳ 待推进 |
+| `app.py` 里残留的 shell 内联（如 `os.popen('ifconfig … \| grep … \| awk …')` 取 IP） | 已经在 Python 里了，却用 shell 管道实现，可换成原生 Python，顺手消除一处 shell 依赖。 | ✅ 已完成（见 §4 阶段 7） |
 
 ### 🟡 可迁可不迁（收益有限，看团队偏好）
 
@@ -197,15 +197,30 @@ repos:
 
 > 说明：`release.sh` 是最完整/权威的副本，故以其取值为准；这次顺带修正了 `build-optimized.sh` 已漂移的缺项。
 
+### 阶段 7：清理 `app.py` shell 内联 + 推广 `set -euo pipefail`
+
+**(b) 清理 `app.py` 的 shell 内联取 IP**：
+
+- 新增纯函数 `src/app.py::get_local_ip()`：用 `socket`（UDP-connect 到公共地址、不实际发包，由 OS 选出出站接口）取本机 IP，替换原 `os.popen('ifconfig eth0 | grep \'inet\' | cut -d: -f2 | awk ...')`；失败时回退空串并 `logger.warning`，不再依赖容器内是否安装 `ifconfig`。
+- 补单测 `test_helpers.py::TestGetLocalIp`（成功路径 + `OSError` 回退，均校验 socket 被关闭）；同步把 `test_appium.py` 两个用例由 mock `os.popen` 改为 mock `src.app.get_local_ip`（保持「grid 路径需解析本机 IP」的断言意图）。
+
+**(a) 推广 `set -euo pipefail`（分级处理，避免负收益）**：
+
+- **build 脚本**（低风险）：`release_real.sh`、`release_geny.sh` 加 `set -euo pipefail`，并把 `set -u` 下会报错的未保护引用改为安全形式（`[ -z "${1:-}" ]`、`--build-arg TOKEN=${TOKEN:-}`），对齐 `release.sh` 既有写法。
+- **小型运行时脚本**：`src/record.sh` 加 `set -eo pipefail`（**不加 `-u`**——它由可空环境变量 `VIDEO_PATH`/`AUTO_RECORD`/`DISPLAY` 驱动）；并把 `stop()` 的 `kill $(...)` 改为「无 ffmpeg 进程时不调用 kill」，避免空参在 `set -e` 下中止脚本；`$@` → `"$@"`。
+- **复杂运行时入口刻意保留**：`src/appium.sh`（大量 `[ "$X" = true ]` 依赖可空变量 + `gmsaas`/`terraform`/`curl` 容错执行）与 `src/utils.sh`（`while true` 主循环 + 大量 `adb`/`curl` 副作用）若强加 `set -e`/`-u` 会改变生产入口行为且无法在容器外验证，按 §3🔴 分类**不强加严格模式**。
+
+**验证**：`flake8 src` = 0；`pytest src/tests/unit` 全绿（50 passed，新增 2）；`bash -n` 校验 `release_real.sh`/`release_geny.sh`/`record.sh` 通过；`py_compile` 通过。
+
 ---
 
 ## 5. 后续可按需推进项（Backlog）
 
 按建议优先级排列，团队可按需挑选：
 
-1. **清理 `app.py` 内 shell 内联**：把 `os.popen('ifconfig eth0 | grep | cut | awk')` 取 IP 改为原生 Python（如读 `socket` / `psutil` / 解析 `/proc`），并补单测。
+1. **清理 `app.py` 内 shell 内联**：✅ 已落地（见 §4 阶段 7）——`os.popen('ifconfig ...')` 取 IP 改为纯 Python `socket` 实现 `get_local_ip()` 并补单测。
 2. **迁移解析类逻辑到 Python + 单测**：`src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（proxy URL 解析）→ `src/` 下的 Python 函数。
-3. **推广 `set -euo pipefail`**：覆盖 `release*.sh`、`src/utils.sh`、`appium.sh` 等尚未启用严格模式的脚本。
+3. **推广 `set -euo pipefail`**：⏳ 部分落地（见 §4 阶段 7）——`release_real.sh`/`release_geny.sh` 已加 `set -euo pipefail`、`src/record.sh` 已加 `set -eo pipefail`；`src/utils.sh`、`src/appium.sh` 因属复杂运行时入口（可空变量 + 容错副作用），刻意保留以免负收益。
 4. **拆分巨型脚本（续）**：`utils.sh` 已抽出纯逻辑到 `src/utils_lib.sh`（见 §4）；`release.sh` / `appium.sh` 仍可按职责进一步拆分。
 5. **启用 mypy / black / isort 门禁**：当前配置已就绪，待团队约定基线后在 CI 开启强制。
 6. **设置覆盖率门槛**：`--cov-fail-under=N`，从现实基线起步逐步提高。

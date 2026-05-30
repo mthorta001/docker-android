@@ -1,4 +1,8 @@
 #!/bin/bash
+# Strict mode without -u (nounset): this is a runtime entrypoint driven by
+# optional environment variables (VIDEO_PATH, AUTO_RECORD, DISPLAY) that may be
+# legitimately unset, so -u would abort valid runs.
+set -eo pipefail
 
 function start() {
     mkdir -p $VIDEO_PATH
@@ -9,7 +13,15 @@ function start() {
 
 function stop() {
     echo "Stop video recording"
-    kill $(ps -ef | grep [f]fmpeg | awk '{print $2}')
+    # Collect ffmpeg PIDs. `grep` exits non-zero when nothing matches; under
+    # `set -e`/`pipefail` that (and a bare `kill` with no PIDs) would abort the
+    # script, so swallow the pipeline with `|| true` and only kill when an
+    # ffmpeg process is actually running.
+    local pids
+    pids=$(ps -ef | grep '[f]fmpeg' | awk '{print $2}') || true
+    if [ -n "$pids" ]; then
+        kill $pids
+    fi
 }
 
 function auto_record() {
@@ -44,4 +56,4 @@ function auto_record() {
     echo "Auto recording is disabled!"
 }
 
-$@
+"$@"

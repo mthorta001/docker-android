@@ -56,6 +56,28 @@ class TestGetEnvPortFromUdid(TestCase):
         self.assertEqual(app.get_env_port_from_udid('5554'), '127.0.0.1:5555')
 
 
+class TestGetLocalIp(TestCase):
+    """Tests for app.get_local_ip (pure-Python replacement for the old
+    ``ifconfig | grep | cut | awk`` shell pipeline)."""
+
+    def test_returns_socket_ip(self):
+        fake_sock = mock.MagicMock()
+        fake_sock.getsockname.return_value = ('192.168.1.42', 12345)
+        with mock.patch('src.app.socket.socket', return_value=fake_sock):
+            self.assertEqual(app.get_local_ip(), '192.168.1.42')
+        # The socket must always be closed, even on the success path.
+        self.assertTrue(fake_sock.close.called)
+
+    def test_returns_empty_on_oserror(self):
+        fake_sock = mock.MagicMock()
+        fake_sock.connect.side_effect = OSError('network unreachable')
+        with mock.patch('src.app.socket.socket', return_value=fake_sock):
+            with mock.patch('src.app.logger') as mocked_logger:
+                self.assertEqual(app.get_local_ip(), '')
+                self.assertTrue(mocked_logger.warning.called)
+        self.assertTrue(fake_sock.close.called)
+
+
 class TestGetAvdAbi(TestCase):
     """Tests for app.get_avd_abi (standard vs 16k tags)."""
 
