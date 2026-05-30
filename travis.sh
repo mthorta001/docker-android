@@ -2,28 +2,6 @@
 # Bash version should >= 4 to be able to run this script.
 set -euo pipefail  # Strict mode: exit on error, exit on undefined variable, exit on pipe failure
 
-# Android version mapping - short version to full version
-declare -A readonly ANDROID_VERSION_MAP=(
-    [5]="5.0.1"
-    [5.0]="5.0.1"
-    [5.1]="5.1.1"
-    [6]="6.0"
-    [7]="7.0"
-    [7.1]="7.1.1"
-    [8]="8.0"
-    [8.1]="8.1"
-    [9]="9.0"
-    [10]="10.0"
-    [11]="11.0"
-    [12]="12.0"
-    [13]="13.0"
-    [14]="14.0"
-    [15]="15.0"
-    [16]="16.0"
-    [16.0_16k]="16.0_16k"
-    [17.0_16k]="17.0_16k"
-)
-
 # Logging functions
 log_info() {
     echo "[INFO] $*" >&2
@@ -33,24 +11,11 @@ log_error() {
     echo "[ERROR] $*" >&2
 }
 
-# Map Android version from short to full format
+# Map Android version from short to full format.
+# The mapping itself lives in src/versions.py (single source of truth shared
+# with the Python code); this wrapper just delegates to it.
 map_android_version() {
-    local input_version="$1"
-    
-    # If already a full version (contains dot), return as is
-    if [[ "$input_version" == *.* ]]; then
-        echo "$input_version"
-        return 0
-    fi
-    
-    # Try to map short version to full version
-    if [[ -n "${ANDROID_VERSION_MAP[$input_version]:-}" ]]; then
-        echo "${ANDROID_VERSION_MAP[$input_version]}"
-        return 0
-    fi
-    
-    # If no mapping found, return original version
-    echo "$input_version"
+    python3 -m src.versions map "$1"
 }
 
 # Secure Docker login
