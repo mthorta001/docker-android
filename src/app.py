@@ -4,9 +4,8 @@ import json
 import logging
 import os
 import subprocess
-import time
 
-from src import CHROME_DRIVER, CONFIG_FILE, ROOT
+from src import CONFIG_FILE, ROOT
 from src import log
 
 log.init()
@@ -53,7 +52,7 @@ def convert_str_to_bool(str: str) -> bool:
 def get_env_int(env_name: str, default_value: int) -> int:
     """
     Safely get integer value from environment variable.
-    
+
     :param env_name: Environment variable name
     :param default_value: Default value if env var is not set or invalid
     :return: Integer value
@@ -71,7 +70,7 @@ def get_env_int(env_name: str, default_value: int) -> int:
 def get_env_port_from_udid(default_port: str = "5554") -> str:
     """
     Safely extract port from UDID environment variable.
-    
+
     :param default_port: Default port if UDID is not set or invalid
     :return: Port string
     """
@@ -79,7 +78,7 @@ def get_env_port_from_udid(default_port: str = "5554") -> str:
     if udid is None:
         logger.warning(f"UDID environment variable not set, using default port: {default_port}")
         return default_port
-    
+
     if 'emulator-' in udid:
         try:
             return udid.replace('emulator-', '')
@@ -98,7 +97,8 @@ def is_initialized(device_name) -> bool:
         logger.info('Found existing config file at {}.'.format(config_path))
         with open(config_path, 'r') as f:
             if any('hw.device.name={}'.format(device_name) in line for line in f):
-                logger.info('Existing config file references {}. Assuming device was previously initialized.'.format(device_name))
+                logger.info('Existing config file references {}. '
+                            'Assuming device was previously initialized.'.format(device_name))
                 return True
             else:
                 logger.info('Existing config file does not reference {}. Assuming new device.'.format(device_name))
@@ -156,7 +156,7 @@ def prepare_avd(device: str, avd_name: str, dp_size: str):
 
     avd_path = '/'.join([ANDROID_HOME, 'android_emulator'])
     avd_abi = get_avd_abi()
-    
+
     # Build avdmanager command with proper ABI parameter
     creation_cmd = 'avdmanager create avd -f -n {name} -b {abi} -k "system-images;android-{api_lvl};' \
                    '{img_type};{sys_img}" -d {device} -p {path}'.format(
@@ -234,7 +234,7 @@ def appium_run(avd_name: str):
     grid_connect = convert_str_to_bool(str(os.getenv('CONNECT_TO_GRID', False)))
     logger.info('Connect to selenium grid? {connect}'.format(connect=grid_connect))
     if grid_connect:
-        # Ubuntu 16.04 -> local_ip = os.popen('ifconfig eth0 | grep \'inet addr:\' | cut -d: -f2 | awk \'{ print $1}\'').read().strip()
+        # Ubuntu 16.04 used: ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'
         local_ip = os.popen('ifconfig eth0 | grep \'inet\' | cut -d: -f2 | awk \'{ print $2}\'').read().strip()
         try:
             mobile_web_test = convert_str_to_bool(str(os.getenv('MOBILE_WEB_TEST', False)))
@@ -251,6 +251,7 @@ def appium_run(avd_name: str):
             logger.error(v_err)
     title = 'Appium Server'
     subprocess.check_call('xterm -T "{title}" -n "{title}" -e \"{cmd}\"'.format(title=title, cmd=cmd), shell=True)
+
 
 # Deprecated
 def back_appium_run():
@@ -318,10 +319,11 @@ def run():
     """Run app."""
     device = os.getenv('DEVICE', 'Nexus 5')
     logger.info('Device: {device}'.format(device=device))
-    custom_args=os.getenv('EMULATOR_ARGS', '')
+    custom_args = os.getenv('EMULATOR_ARGS', '')
     logger.info('Custom Args: {custom_args}'.format(custom_args=custom_args))
 
-    avd_name = os.getenv('AVD_NAME', '{device}_{version}'.format(device=device.replace(' ', '_').lower(), version=ANDROID_VERSION))
+    avd_name = os.getenv('AVD_NAME', '{device}_{version}'.format(
+        device=device.replace(' ', '_').lower(), version=ANDROID_VERSION))
     logger.info('AVD name: {avd}'.format(avd=avd_name))
     is_first_run = not is_initialized(device)
 
@@ -357,7 +359,7 @@ def run():
         logger.info('Run appium server...')
         appium_run(avd_name)
     else:
-        result = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()
+        subprocess.Popen(cmd.split(), stdout=subprocess.PIPE).communicate()
 
 
 if __name__ == '__main__':

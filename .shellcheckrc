@@ -1,0 +1,15 @@
+# ShellCheck configuration for docker-android
+# Docs: https://github.com/koalaman/shellcheck/wiki
+
+# Treat all scripts as bash (project relies on bash features such as
+# associative arrays and [[ ... ]]).
+shell=bash
+
+# Follow `source`d files when possible so cross-file definitions are resolved.
+external-sources=true
+
+# Globally disabled checks (justification per line):
+# SC1091: "Not following: <file> was not specified as input" - sourced files
+#         (e.g. utils.sh, appium.sh) are loaded at runtime and may not exist
+#         at lint time.
+disable=SC1091

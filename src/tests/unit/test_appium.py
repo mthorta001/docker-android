@@ -56,8 +56,8 @@ class TestAppium(TestCase):
             self.assertTrue(mocked_os.called)
             self.assertTrue(mocked_subprocess.called)
             # Verify that the warning was logged about invalid port value
-            warning_calls = [call for call in mocked_logger.warning.call_args_list 
-                           if 'Invalid integer value for APPIUM_PORT' in str(call)]
+            warning_calls = [call for call in mocked_logger.warning.call_args_list
+                             if 'Invalid integer value for APPIUM_PORT' in str(call)]
             self.assertTrue(len(warning_calls) > 0)
 
     def test_config_creation(self):

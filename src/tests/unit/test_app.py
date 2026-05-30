@@ -10,13 +10,13 @@ from src import app
 # https://bugs.python.org/issue21258
 def mock_open(*args, **kargs):
     f_open = mock.mock_open(*args, **kargs)
-    f_open.return_value.__iter__ = lambda self : iter(self.readline, '')
+    f_open.return_value.__iter__ = lambda self: iter(self.readline, '')
     return f_open
 
 
 class TestApp(TestCase):
     """Unit test class to test other methods in the app."""
-    
+
     def setUp(self):
         """Set up test environment variables."""
         # Set required environment variables for testing
@@ -26,7 +26,7 @@ class TestApp(TestCase):
         os.environ['PROCESSOR'] = 'x86'
         os.environ['SYS_IMG'] = 'x86'
         os.environ['IMG_TYPE'] = 'google_apis'
-        
+
     def tearDown(self):
         """Clean up test environment variables."""
         # Clean up environment variables

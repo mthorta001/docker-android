@@ -1,0 +1,44 @@
+name: Lint
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  shell:
+    name: Shell (shellcheck + shfmt)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        env:
+          SHELLCHECK_OPTS: --shell=bash --external-sources
+
+      - name: Set up shfmt
+        uses: mfinelli/setup-shfmt@v3
+
+      - name: Check shell formatting (shfmt)
+        run: shfmt -d -i 4 -ci $(find . -type f -name '*.sh')
+
+  python:
+    name: Python (flake8 + mypy)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install lint tools
+        run: pip install flake8 mypy
+
+      - name: Run flake8
+        run: flake8 src
+
+      - name: Run mypy
+        run: mypy src --ignore-missing-imports
