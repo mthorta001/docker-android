@@ -109,7 +109,7 @@ repos:
 | 文件 / 逻辑 | 为什么值得迁移 | 状态 |
 |------------|----------------|------|
 | `travis.sh` 的 `map_android_version`、`ANDROID_VERSION_MAP` | 纯版本映射 + 字符串判断；与 `src/app.py` 版本逻辑重叠，Shell/Python 各维护一份有漂移风险。收敛到 Python 一处 + 单测最划算。 | ✅ 已完成（见 §3） |
-| `src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（解析 proxy URL、`IFS` 切分） | 字符串/URL 解析在 Bash 里很易错（引号、`sed`、`IFS`），Python 三行 `urllib.parse` 就清楚且可测。 | ⏳ 待推进 |
+| `src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（解析 proxy URL、`IFS` 切分） | 字符串/URL 解析在 Bash 里很易错（引号、`sed`、`IFS`），Python 三行 `urllib.parse` 就清楚且可测。 | ✅ 已完成（proxy URL 解析见 §3 阶段 8；`parse_android_version_and_device` 已抽到可测的 `src/utils_lib.sh`，见 §3 阶段 5） |
 | `app.py` 里残留的 shell 内联（如 `os.popen('ifconfig … \| grep … \| awk …')` 取 IP） | 已经在 Python 里了，却用 shell 管道实现，可换成原生 Python，顺手消除一处 shell 依赖。 | ✅ 已完成（见 §3 阶段 7） |
 
 ### 🟡 可迁可不迁（收益有限，看团队偏好）
@@ -191,6 +191,16 @@ repos:
 
 **验证**：`flake8 src` = 0；`pytest src/tests/unit` 全绿（50 passed，新增 2）；`bash -n` 校验 `release_real.sh`/`release_geny.sh`/`record.sh` 通过；`py_compile` 通过。
 
+### 阶段 8：proxy URL 解析迁移到 Python
+
+把 `src/utils.sh::enable_proxy_if_needed` 里易错的 Bash URL 解析（`grep`/`sed`/`IFS=':' read`）替换为纯 Python，**仅迁纯解析逻辑、保留后续 `adb` 编排**（属 §2🔴 应保留 Shell 的副作用部分）：
+
+- 新增 `src/proxy.py`：纯函数 `parse_proxy_url(http_proxy) -> (host, port)`，用标准库 `urllib.parse.urlparse` 实现（自动处理无 scheme 的 `host:port`、无端口、空值/`None`），并提供 `python3 -m src.proxy parse <url>` CLI（输出 `"<host> <port>"`）；**仍刻意不 import `src.app`**，可在 CI/shell 独立运行。
+- 改造 `src/utils.sh::enable_proxy_if_needed`：删除 `protocol=...grep|sed`、`proxy=${HTTP_PROXY/.../}`、`IFS=':' read -r -a p` 三段 Bash 解析，改为 `read -r p_host p_port < <(... python3 -m src.proxy parse "$HTTP_PROXY")`；后续所有 `adb root`/`adb shell content update ...`/`adb svc data` 编排**原样保留**，入口契约不变。
+- 新增单测 `src/tests/unit/test_proxy.py`：覆盖 http/https 带端口、无 scheme、无端口、首尾空白、空值/`None`，及 CLI 成功/非法用法返回码。
+
+**验证**：`flake8 src` = 0；`pytest src/tests/unit` 全绿（60 passed，新增 10）；`bash -n src/utils.sh` 通过；CLI 输出与原 bash 解析对 `http`/`https` 路径逐项一致。
+
 ---
 
 ## 4. 后续可按需推进项（Backlog）
@@ -198,7 +208,7 @@ repos:
 按建议优先级排列，团队可按需挑选：
 
 1. **清理 `app.py` 内 shell 内联**：✅ 已落地（见 §3 阶段 7）——`os.popen('ifconfig ...')` 取 IP 改为纯 Python `socket` 实现 `get_local_ip()` 并补单测。
-2. **迁移解析类逻辑到 Python + 单测**：`src/utils.sh` 的 `parse_android_version_and_device`、`enable_proxy_if_needed`（proxy URL 解析）→ `src/` 下的 Python 函数。
+2. **迁移解析类逻辑到 Python + 单测**：✅ 已落地——`enable_proxy_if_needed` 的 proxy URL 解析改为 `src/proxy.py::parse_proxy_url`（`urllib.parse`）并补单测（见 §3 阶段 8）；`parse_android_version_and_device` 已抽到可 bats 测试的 `src/utils_lib.sh`（见 §3 阶段 5）。剩余 `adb` 编排按 §2🔴 保留 Shell。
 3. **推广 `set -euo pipefail`**：⏳ 部分落地（见 §3 阶段 7）——`release_real.sh`/`release_geny.sh` 已加 `set -euo pipefail`、`src/record.sh` 已加 `set -eo pipefail`；`src/utils.sh`、`src/appium.sh` 因属复杂运行时入口（可空变量 + 容错副作用），刻意保留以免负收益。
 4. **拆分巨型脚本（续）**：`utils.sh` 已抽出纯逻辑到 `src/utils_lib.sh`（见 §3）；`release.sh` / `appium.sh` 仍可按职责进一步拆分。
 5. **启用 mypy / black / isort 门禁**：当前配置已就绪，待团队约定基线后在 CI 开启强制。

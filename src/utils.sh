@@ -42,11 +42,10 @@ function enable_proxy_if_needed() {
   if [ "$ENABLE_PROXY_ON_EMULATOR" = true ]; then
     if [ ! -z "${HTTP_PROXY// /}" ]; then
       if [[ $HTTP_PROXY == *"http"* ]]; then
-        protocol="$(echo $HTTP_PROXY | grep :// | sed -e's,^\(.*://\).*,\1,g')"
-        proxy="$(echo ${HTTP_PROXY/$protocol/})"
-        echo "[EMULATOR] - Proxy: $proxy"
-
-        IFS=':' read -r -a p <<<"$proxy"
+        # Parse the proxy URL with the pure-Python helper (src/proxy.py) instead
+        # of brittle grep/sed/IFS splitting. It prints "<host> <port>".
+        read -r p_host p_port < <(cd "$(dirname "${BASH_SOURCE[0]}")/.." && python3 -m src.proxy parse "$HTTP_PROXY")
+        p=("$p_host" "$p_port")
 
         echo "[EMULATOR] - Proxy-IP: ${p[0]}"
         echo "[EMULATOR] - Proxy-Port: ${p[1]}"
