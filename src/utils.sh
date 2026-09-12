@@ -369,8 +369,8 @@ function check_wifi() {
               sleep 2
           done
           emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai \
-              -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose -dns-server 10.32.51.10,10.32.51.55 &
-          echo "emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai -no-boot-anim -gpu swiftshader_indirect -accel on -wipe-data -writable-system -verbose &"
+              -no-boot-anim -gpu software -feature -Vulkan -accel on -wipe-data -writable-system -verbose -dns-server 10.32.51.10,10.32.51.55 &
+          echo "emulator/emulator @$AVD_NAME -port $PORT -timezone Asia/Shanghai -no-boot-anim -gpu software -feature -Vulkan -accel on -wipe-data -writable-system -verbose &"
           botman_team $HOST_IP:$TARGET_PORT $UDID no wifi, recreate emulator
           wait_emulator_to_be_ready
           unlock_device
