@@ -21,6 +21,9 @@ ARG CHROME_DRIVER=91.0.
 ARG GOOGLE_PLAY_SERVICE=12.8.74
 ARG GOOGLE_PLAY_STORE=11.0.50
 ARG APP_RELEASE_VERSION=1.5-p0
+ARG EMULATOR_VERSION=36.6.11
+ARG EMULATOR_BUILD_ID=15507667
+ARG EMULATOR_SHA256=1eade4cf2df6ea8eeead4902c635897ba12aaa32aac4389eaae0fdb498a5b830
 
 #======================
 # Environment Variables
@@ -102,7 +105,7 @@ RUN set -ex && \
     ln -sf /usr/bin/python3 /usr/bin/python && \
     rm -f noVNC.zip websockify.zip && \
     \
-    # Update sdkmanager first so preview SDK packages such as android-37.0 are visible.
+    # Update sdkmanager first so API 37 packages are visible.
     java -version && \
     sdkmanager_bin="$(command -v sdkmanager)" && \
     yes | "${sdkmanager_bin}" --licenses --sdk_root=/root || true && \
@@ -116,8 +119,15 @@ RUN set -ex && \
     yes | "${sdkmanager_bin}" --licenses --sdk_root=/root && \
     "${sdkmanager_bin}" --sdk_root=/root --channel=3 \
         "platforms;android-${API_LEVEL}" \
-        "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" \
-        "emulator" && \
+        "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" && \
+    # Pin the Emulator binary to an official stable archive instead of the
+    # sdkmanager channel, whose unversioned emulator package can drift to Canary.
+    wget -nv -O emulator.zip "https://dl.google.com/android/repository/emulator-linux_x64-${EMULATOR_BUILD_ID}.zip" && \
+    echo "${EMULATOR_SHA256}  emulator.zip" | sha256sum --check --status && \
+    rm -rf /root/emulator && \
+    unzip -q emulator.zip -d /root && \
+    rm -f emulator.zip && \
+    /root/emulator/emulator -version | grep -F "Android emulator version ${EMULATOR_VERSION}.0" && \
     \
     # Download ChromeDriver (smart fallback)
     (wget -nv -O chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_DRIVER}/linux64/chromedriver-linux64.zip" || \
