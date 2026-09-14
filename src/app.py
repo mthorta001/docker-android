@@ -214,11 +214,15 @@ def appium_run(avd_name: str):
     """
     appium_port = get_env_int('APPIUM_PORT', 4723)
     default_capabilities = os.getenv('DEFAULT_CAPABILITIES', '')
-    DEFAULT_LOG_PATH = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
+    default_log_path = '/var/log/supervisor/appium_logs/appium_{port}.log'.format(port=appium_port)
+    appium_log_path = os.getenv('APPIUM_LOG', default_log_path)
+    appium_log_dir = os.path.dirname(appium_log_path)
+    if appium_log_dir:
+        os.makedirs(appium_log_dir, exist_ok=True)
 
     cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override ' \
           '--base-path /wd/hub --use-plugins=relaxed-caps,images' \
-        .format(log=os.getenv('APPIUM_LOG', DEFAULT_LOG_PATH), appium_port=appium_port)
+        .format(log=appium_log_path, appium_port=appium_port)
 
     relaxed_security = convert_str_to_bool(str(os.getenv('RELAXED_SECURITY', True)))
     logger.info('Relaxed security? {rs}'.format(rs=relaxed_security))
@@ -249,8 +253,7 @@ def appium_run(avd_name: str):
             cmd += ' --nodeconfig {file}'.format(file=CONFIG_FILE)
         except ValueError as v_err:
             logger.error(v_err)
-    title = 'Appium Server'
-    subprocess.check_call('xterm -T "{title}" -n "{title}" -e \"{cmd}\"'.format(title=title, cmd=cmd), shell=True)
+    subprocess.check_call(cmd, shell=True)
 
 # Deprecated
 def back_appium_run():
