@@ -26,6 +26,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         android: ["15.0", "16.0", "16.0_16k", "17.0_16k"]
     env:
@@ -80,7 +81,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push optimized Docker image
+      - name: Build optimized Docker image
+        env:
+          PUSH_IMAGES: "false"
         run: |
           # Make build scripts executable
           chmod +x build-optimized.sh
@@ -204,6 +207,16 @@ jobs:
           echo "❌ Timed out waiting for the container to become ready"
           dump_diagnostics
           exit 1
+
+      - name: Publish verified Docker image
+        run: |
+          set -euo pipefail
+
+          DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
+          IMAGE_NAME="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}"
+          echo "Publishing $IMAGE_NAME:$TRAVIS_TAG and $IMAGE_NAME:latest"
+          docker push "$IMAGE_NAME:$TRAVIS_TAG"
+          docker push "$IMAGE_NAME:latest"
 
       - name: Image size report
         run: |
