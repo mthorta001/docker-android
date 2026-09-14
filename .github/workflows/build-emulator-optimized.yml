@@ -31,7 +31,7 @@ jobs:
         android: ["15.0", "16.0", "16.0_16k", "17.0_16k"]
     env:
       ANDROID_VERSION: ${{ matrix.android }}
-      TRAVIS_TAG: ${{ github.event.inputs.tags }}
+      RELEASE_TAG: ${{ github.event.inputs.tags }}
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       BUILD_TYPE: ${{ github.event.inputs.build_type }}
@@ -154,7 +154,7 @@ jobs:
         run: |
           # Make build scripts executable
           chmod +x build-optimized.sh
-          chmod +x travis-optimized.sh
+          chmod +x build-optimized-ci.sh
           chmod +x release.sh
           
           # Set build options based on inputs
@@ -169,7 +169,7 @@ jobs:
           fi
           
           # Run optimized build via specialized script
-          bash travis-optimized.sh
+          bash build-optimized-ci.sh
         shell: bash
 
       - name: Test Docker image
@@ -181,7 +181,7 @@ jobs:
           docker images
 
           DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
-          IMAGE_TAG="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}:${TRAVIS_TAG}"
+          IMAGE_TAG="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}:${RELEASE_TAG}"
           echo "Testing image: $IMAGE_TAG"
 
           dump_diagnostics() {
@@ -281,8 +281,8 @@ jobs:
 
           DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
           IMAGE_NAME="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}"
-          echo "Publishing $IMAGE_NAME:$TRAVIS_TAG and $IMAGE_NAME:latest"
-          docker push "$IMAGE_NAME:$TRAVIS_TAG"
+          echo "Publishing $IMAGE_NAME:$RELEASE_TAG and $IMAGE_NAME:latest"
+          docker push "$IMAGE_NAME:$RELEASE_TAG"
           docker push "$IMAGE_NAME:latest"
 
       - name: Image size report
