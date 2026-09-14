@@ -33,6 +33,12 @@ class TestAvd(TestCase):
         self.assertTrue(mocked_suprocess.called)
         self.assertTrue(mocked_open.called)
 
+    def test_api_36_16k_uses_page_size_tag(self, mocked_suprocess):
+        with mock.patch.object(app, 'API_LEVEL', '36'), \
+                mock.patch.object(app, 'IMG_TYPE', 'google_apis_ps16k'), \
+                mock.patch.object(app, 'SYS_IMG', 'x86_64'):
+            self.assertEqual('page_size_16kb/x86_64', app.get_avd_abi())
+
     def tearDown(self):
         if os.getenv('DEVICE'):
             del os.environ['DEVICE']
