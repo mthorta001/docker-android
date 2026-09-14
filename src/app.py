@@ -126,11 +126,14 @@ logger.info('Android version: {version} \n'
 def get_avd_abi():
     """
     Get the ABI for avdmanager -b parameter.
-    avdmanager expects the normalized tag/abi pair for the selected system image.
-    16k package names use tags like 'google_apis_ps16k', but avdmanager still expects
-    the base tag such as 'google_apis/x86_64'.
+    avdmanager expects the tag exposed by the selected system image package.
+    API 36 exposes 16 KB images through the page_size_16kb tag, while newer
+    16 KB packages use the base Google APIs tag.
     """
-    img_tag = IMG_TYPE[:-6] if IMG_TYPE.endswith('_ps16k') else IMG_TYPE
+    if API_LEVEL == '36' and IMG_TYPE.endswith('_ps16k'):
+        img_tag = 'page_size_16kb'
+    else:
+        img_tag = IMG_TYPE[:-6] if IMG_TYPE.endswith('_ps16k') else IMG_TYPE
     return f'{img_tag}/{SYS_IMG}'
 
 
