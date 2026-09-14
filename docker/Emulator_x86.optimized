@@ -79,6 +79,7 @@ RUN set -ex && \
         socat \
         x11vnc \
         xterm \
+        xfonts-base \
         openbox \
         feh \
         python3 \
