@@ -120,13 +120,14 @@ RUN set -ex && \
     "${sdkmanager_bin}" --sdk_root=/root --channel=3 \
         "platforms;android-${API_LEVEL}" \
         "system-images;android-${API_LEVEL};${IMG_TYPE};${SYS_IMG}" && \
-    # Pin the Emulator binary to an official stable archive instead of the
-    # sdkmanager channel, whose unversioned emulator package can drift to Canary.
+    # Keep the SDK package record required by avdmanager. The pinned archive
+    # below overlays this bootstrap package, so the runtime binary cannot drift.
+    "${sdkmanager_bin}" --sdk_root=/root --channel=0 "emulator" && \
     wget -nv -O emulator.zip "https://dl.google.com/android/repository/emulator-linux_x64-${EMULATOR_BUILD_ID}.zip" && \
     echo "${EMULATOR_SHA256}  emulator.zip" | sha256sum --check --status && \
-    rm -rf /root/emulator && \
-    unzip -q emulator.zip -d /root && \
+    unzip -qo emulator.zip -d /root && \
     rm -f emulator.zip && \
+    test -s /root/emulator/package.xml && \
     /root/emulator/emulator -version | grep -F "Android emulator version ${EMULATOR_VERSION}.0" && \
     \
     # Download ChromeDriver (smart fallback)
