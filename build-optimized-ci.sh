@@ -1,5 +1,5 @@
 #!/bin/bash
-# Optimized Travis build script for Docker Android images
+# Optimized CI build script for Docker Android images
 # This script is specifically designed for building optimized Docker images
 set -euo pipefail  # Strict mode: exit on error, exit on undefined variable, exit on pipe failure
 
@@ -58,7 +58,7 @@ This script builds optimized Docker Android images using the optimized build pro
 
 Environment Variables:
   ANDROID_VERSION    Android version to build (required for builds)
-  TRAVIS_TAG         Release tag (required for builds)
+  RELEASE_TAG        Release tag (required for builds)
   DOCKER_USERNAME    Docker Hub username (required for push)
   DOCKER_PASSWORD    Docker Hub password (required for push)
   
@@ -72,10 +72,10 @@ Examples:
   $0
   
   # Build with environment variables
-  ANDROID_VERSION=12.0 TRAVIS_TAG=v1.21.0 $0
+  ANDROID_VERSION=12.0 RELEASE_TAG=v1.21.0 $0
   
   # Build with optimization options
-  NO_CACHE=true SQUASH=true ANDROID_VERSION=14.0 TRAVIS_TAG=latest $0
+  NO_CACHE=true SQUASH=true ANDROID_VERSION=14.0 RELEASE_TAG=latest $0
 
 Options:
   -h, --help        Show this help message
@@ -176,7 +176,7 @@ build_optimized_image() {
     
     # Set environment variables for build script
     export ANDROID_VERSION="$mapped_version"
-    export TRAVIS_TAG="$release_tag"
+    export RELEASE_TAG="$release_tag"
     
     # Set build options from environment
     if [[ "${NO_CACHE:-}" == "true" ]]; then
@@ -261,7 +261,7 @@ main() {
                 exit 0
                 ;;
             -v|--version)
-                echo "travis-optimized.sh v1.0.0 - Optimized Docker Android Builder"
+                echo "build-optimized-ci.sh v1.0.0 - Optimized Docker Android Builder"
                 exit 0
                 ;;
             --test-only)
@@ -301,8 +301,8 @@ main() {
     fi
     
     # Check if this is a tagged release or if we have required variables
-    if [[ -z "${TRAVIS_TAG:-}" ]]; then
-        log_info "No TRAVIS_TAG found - running tests only"
+    if [[ -z "${RELEASE_TAG:-}" ]]; then
+        log_info "No RELEASE_TAG found - running tests only"
         run_tests
         exit $?
     fi
@@ -315,7 +315,7 @@ main() {
     
     # Execute optimized build
     local success=true
-    if ! execute_optimized_build "$ANDROID_VERSION" "$TRAVIS_TAG" "$no_push"; then
+    if ! execute_optimized_build "$ANDROID_VERSION" "$RELEASE_TAG" "$no_push"; then
         success=false
     fi
     
