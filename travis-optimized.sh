@@ -333,8 +333,10 @@ cleanup() {
     local exit_code=$?
     log_info "Cleaning up..."
     
-    # Ensure we logout from Docker Hub
-    if docker info &> /dev/null; then
+    # A caller that defers publishing still needs the action-managed login for
+    # its later publish step. Only clean up credentials when this script owns
+    # the image push.
+    if [[ "${PUSH_IMAGES:-true}" == "true" ]] && docker info &> /dev/null; then
         docker_logout 2>/dev/null || true
     fi
     
