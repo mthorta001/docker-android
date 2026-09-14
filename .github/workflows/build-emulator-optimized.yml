@@ -81,6 +81,73 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Verify Docker Hub push permission
+        run: |
+          set -euo pipefail
+
+          DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
+          IMAGE_NAME="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}"
+          python3 - "$IMAGE_NAME" <<'PY'
+          import base64
+          import binascii
+          import json
+          import os
+          import sys
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          expected_repository = sys.argv[1]
+          username = os.environ["DOCKER_USERNAME"]
+          password = os.environ["DOCKER_PASSWORD"]
+          query = urlencode(
+              {
+                  "service": "registry.docker.io",
+                  "scope": f"repository:{expected_repository}:pull,push",
+              }
+          )
+          credentials = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("ascii")
+          request = Request(
+              f"https://auth.docker.io/token?{query}",
+              headers={"Authorization": f"Basic {credentials}"},
+          )
+
+          try:
+              with urlopen(request, timeout=20) as response:
+                  token_response = json.load(response)
+          except HTTPError as error:
+              raise SystemExit(f"Docker Hub token request failed with HTTP {error.code}.") from error
+          except URLError as error:
+              raise SystemExit("Docker Hub token request could not be completed.") from error
+
+          token = token_response.get("token") or token_response.get("access_token")
+          if not token:
+              raise SystemExit("Docker Hub did not return a bearer token for the requested repository scope.")
+
+          try:
+              payload = token.split(".")[1]
+              payload += "=" * (-len(payload) % 4)
+              claims = json.loads(base64.urlsafe_b64decode(payload).decode("utf-8"))
+          except (IndexError, UnicodeDecodeError, ValueError, binascii.Error) as error:
+              raise SystemExit(
+                  "Docker Hub returned an opaque bearer token; unable to inspect its granted actions safely."
+              ) from error
+
+          actions = set()
+          for access in claims.get("access", []):
+              if access.get("type") == "repository" and access.get("name") == expected_repository:
+                  actions.update(access.get("actions", []))
+
+          if "push" not in actions:
+              granted = ", ".join(sorted(actions)) or "none"
+              raise SystemExit(
+                  f"Docker Hub authenticated the credential but did not grant push for the target repository. "
+                  f"Granted actions: {granted}."
+              )
+
+          print("Docker Hub granted push permission for the target repository.")
+          PY
+
       - name: Build optimized Docker image
         env:
           PUSH_IMAGES: "false"
