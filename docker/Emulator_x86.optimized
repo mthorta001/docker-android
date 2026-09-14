@@ -78,6 +78,7 @@ RUN set -ex && \
         supervisor \
         socat \
         x11vnc \
+        xterm \
         openbox \
         feh \
         python3 \
