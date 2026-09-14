@@ -225,7 +225,7 @@ main() {
     
     # Use environment variables if available, otherwise use parameters or defaults
     local android_version="${ANDROID_VERSION:-${1:-12.0}}"
-    local release_tag="${TRAVIS_TAG:-${2:-optimized}}"
+    local release_tag="${RELEASE_TAG:-${2:-optimized}}"
     
     check_docker
     estimate_build_time

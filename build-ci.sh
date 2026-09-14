@@ -116,8 +116,8 @@ execute_genymotion_build() {
 # Main execution logic
 main() {
     # Check if this is a tagged release
-    if [[ -z "${TRAVIS_TAG:-}" ]]; then
-        log_info "No Travis tag found - running unit tests only"
+    if [[ -z "${RELEASE_TAG:-}" ]]; then
+        log_info "No release tag found - running unit tests only"
         bash release.sh test all all 0.1
         return 0
     fi
@@ -129,15 +129,15 @@ main() {
     
     # Execute builds based on environment variables
     if [[ -n "${ANDROID_VERSION:-}" ]]; then
-        if ! execute_android_build "$ANDROID_VERSION" "$TRAVIS_TAG"; then
+        if ! execute_android_build "$ANDROID_VERSION" "$RELEASE_TAG"; then
             success=false
         fi
     elif [[ -n "${REAL_DEVICE:-}" ]]; then
-        if ! execute_real_device_build "$TRAVIS_TAG"; then
+        if ! execute_real_device_build "$RELEASE_TAG"; then
             success=false
         fi
     elif [[ -n "${GENYMOTION:-}" ]]; then
-        if ! execute_genymotion_build "$TRAVIS_TAG"; then
+        if ! execute_genymotion_build "$RELEASE_TAG"; then
             success=false
         fi
     else
