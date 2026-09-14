@@ -121,8 +121,8 @@ build_optimized_image() {
     log_info "Image information:"
     docker images "$image_name" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
     
-    # Push to registry if credentials are available
-    if [[ -n "${DOCKER_USERNAME:-}" ]] && [[ -n "${DOCKER_PASSWORD:-}" ]]; then
+    # Push only after the caller has completed its validation steps.
+    if [[ "${PUSH_IMAGES:-true}" == "true" ]] && [[ -n "${DOCKER_USERNAME:-}" ]] && [[ -n "${DOCKER_PASSWORD:-}" ]]; then
         log_info "Pushing images to Docker Hub..."
         
         # Push all tags
@@ -130,6 +130,8 @@ build_optimized_image() {
         docker push "$image_name:latest"
         
         log_info "Images pushed successfully!"
+    elif [[ "${PUSH_IMAGES:-true}" == "false" ]]; then
+        log_info "Skipping image push because PUSH_IMAGES=false"
     else
         log_warn "Docker credentials not found. Images built but not pushed."
         log_info "To push manually:"
@@ -155,7 +157,7 @@ get_api_level() {
         "13.0") echo "33" ;;
         "14.0") echo "34" ;;
         "15.0") echo "35" ;;
-        "16.0") echo "36" ;;
+        "16.0"|"16.0_16k") echo "36" ;;
         "17.0_16k") echo "37.0" ;;
         *) echo "" ;;
     esac
@@ -177,7 +179,7 @@ get_chromedriver_version() {
         "13.0") echo "104.0.5112.29" ;;
         "14.0") echo "114.0.5735.90" ;;
         "15.0") echo "114.0.5735.90" ;;
-        "16.0") echo "137.0.7151.70" ;;
+        "16.0"|"16.0_16k") echo "137.0.7151.70" ;;
         "17.0_16k") echo "137.0.7151.70" ;;
         *) echo "" ;;
     esac

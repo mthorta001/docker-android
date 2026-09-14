@@ -230,8 +230,8 @@ execute_optimized_build() {
         return 1
     fi
     
-    # Push to registry unless skipped
-    if [[ "$skip_push" != "true" ]]; then
+    # Keep the Docker login available for a later publish step when image pushes are deferred.
+    if [[ "$skip_push" != "true" && "${PUSH_IMAGES:-true}" == "true" ]]; then
         if ! docker_login; then
             log_error "Docker login failed, cannot push images"
             return 1
@@ -242,7 +242,7 @@ execute_optimized_build() {
         # Logout after build (build script handles push)
         docker_logout
     else
-        log_info "Skipping push to registry as requested"
+        log_info "Skipping registry login because image publishing is deferred or disabled"
     fi
     
     log_info "🎉 Optimized build process completed successfully!"
