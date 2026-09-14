@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        android: ["12.0", "14.0", "15.0", "16.0", "16.0_16k", "17.0_16k"]
+        android: ["15.0", "16.0", "16.0_16k", "17.0_16k"]
     env:
       ANDROID_VERSION: ${{ matrix.android }}
       TRAVIS_TAG: ${{ github.event.inputs.tags }}
@@ -104,28 +104,49 @@ jobs:
 
       - name: Test Docker image
         run: |
-          # Basic test to ensure image was built correctly
+          set -euo pipefail
+
           echo "=== Available Docker images ==="
           docker images | grep docker-android || echo "No docker-android images found"
           docker images
-          
-          # Test image can start (basic smoke test)
-          # Note: Should match non-optimized version format: rcswain/docker-android-x86-X.X:TAG
+
           DOCKER_ORG="${DOCKER_USERNAME:-budtmo}"
           IMAGE_TAG="${DOCKER_ORG}/docker-android-x86-${ANDROID_VERSION}:${TRAVIS_TAG}"
           echo "Testing image: $IMAGE_TAG"
-          
-          # Check if the specific image exists
+
+          dump_diagnostics() {
+            echo "=== Container diagnostics ==="
+            docker ps -a --filter name=test-container || true
+            docker inspect test-container || true
+            docker inspect --format '{{json .State.Health}}' test-container || true
+            docker logs --timestamps test-container || true
+            docker exec test-container sh -c '
+              echo "=== Processes ==="
+              ps aux || true
+              echo "=== Listening ports ==="
+              netstat -lntp || true
+              echo "=== Supervisor and Appium logs ==="
+              for log in /var/log/supervisor/*.log /var/log/supervisor/appium_logs/*; do
+                [ -f "$log" ] || continue
+                echo "--- $log ---"
+                tail -n 200 "$log"
+              done
+            ' || true
+          }
+
+          cleanup() {
+            docker rm -f test-container >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
           if ! docker image inspect "$IMAGE_TAG" >/dev/null 2>&1; then
             echo "❌ Image $IMAGE_TAG not found!"
             echo "Available images:"
             docker images | grep docker-android || echo "No docker-android images found"
             exit 1
           fi
-          
+
           echo "✅ Image $IMAGE_TAG found"
-          
-          # Start container in background with production-like config
           echo "Starting container..."
           docker run -d --name test-container \
             --privileged \
@@ -143,59 +164,46 @@ jobs:
             -p 5555:5555 \
             "$IMAGE_TAG" || {
               echo "❌ Failed to start container"
-              docker logs test-container 2>/dev/null || echo "No logs available"
+              dump_diagnostics
               exit 1
             }
-          
-          # Wait for container to initialize (Android emulator needs time)
-          echo "Waiting for container to start..."
-          
-          # Check container status periodically
-          for i in {1..12}; do
-            echo "Check $i/12: Waiting 15 seconds..."
-            sleep 15
-            
-            if ! docker ps | grep test-container; then
-              echo "❌ Container stopped unexpectedly!"
-              echo "Container logs:"
-              docker logs test-container
+
+          echo "Waiting for the emulator, ADB, and Appium to become ready..."
+          for i in {1..20}; do
+            if ! docker ps --format '{{.Names}}' | grep -qx test-container; then
+              echo "❌ Container stopped unexpectedly"
+              dump_diagnostics
               exit 1
             fi
-            
-            echo "Container still running, checking progress..."
-            docker logs --tail 5 test-container
-          done
-          
-          echo "=== Final container status check ==="
-          if docker ps | grep test-container; then
-            echo "✅ Container started successfully and is still running"
-            echo "Container status:"
-            docker ps | grep test-container
-            
-            # Additional health checks
-            echo "=== Health checks ==="
-            echo "Checking ADB connection..."
-            if docker exec test-container adb devices 2>/dev/null | grep -q "emulator"; then
-              echo "✅ ADB connection established"
-            else
-              echo "⚠️  ADB connection not yet established (may need more time)"
+
+            health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' test-container 2>/dev/null || echo missing)
+            adb_ready=false
+            boot_completed=false
+            appium_ready=false
+
+            if docker exec test-container adb devices 2>/dev/null | awk '$1 ~ /^emulator-/ && $2 == "device" { found=1 } END { exit !found }'; then
+              adb_ready=true
+              if docker exec test-container adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' | grep -qx '1'; then
+                boot_completed=true
+              fi
             fi
-            
-            echo "Container logs (last 30 lines):"
-            docker logs --tail 30 test-container
-          else
-            echo "❌ Container failed to start or stopped"
-            echo "Container logs:"
-            docker logs test-container
-            echo "Docker ps output:"
-            docker ps -a | grep test-container
-            exit 1
-          fi
-          
-          # Clean up
-          echo "Cleaning up..."
-          docker stop test-container || echo "Container already stopped"
-          docker rm test-container || echo "Container already removed"
+
+            if docker exec test-container wget -q -T 5 -O - http://127.0.0.1:4723/wd/hub/status 2>/dev/null | jq -e '.value.ready == true' >/dev/null; then
+              appium_ready=true
+            fi
+
+            echo "Check $i/20: health=$health adb=$adb_ready boot_completed=$boot_completed appium=$appium_ready"
+            if [[ "$health" == "healthy" && "$adb_ready" == true && "$boot_completed" == true && "$appium_ready" == true ]]; then
+              echo "✅ Emulator, ADB, and Appium are ready"
+              exit 0
+            fi
+
+            sleep 15
+          done
+
+          echo "❌ Timed out waiting for the container to become ready"
+          dump_diagnostics
+          exit 1
 
       - name: Image size report
         run: |
