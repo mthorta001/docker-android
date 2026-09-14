@@ -14,24 +14,31 @@ class TestAppium(TestCase):
         os.environ['CONNECT_TO_GRID'] = str(True)
         self.avd_name = 'test_avd'
 
+    @mock.patch('src.app.os.makedirs')
     @mock.patch('subprocess.check_call')
-    def test_chrome_driver(self, mocked_subprocess):
+    def test_chrome_driver(self, mocked_subprocess, mocked_makedirs):
         os.environ['CONNECT_TO_GRID'] = str(False)
         os.environ['BROWSER'] = 'chrome'
         self.assertFalse(mocked_subprocess.called)
         app.appium_run(self.avd_name)
         self.assertTrue(mocked_subprocess.called)
+        self.assertNotIn('xterm', mocked_subprocess.call_args.args[0])
+        self.assertIn('--base-path /wd/hub', mocked_subprocess.call_args.args[0])
+        mocked_makedirs.assert_called_once_with('/var/log/supervisor/appium_logs', exist_ok=True)
 
+    @mock.patch('src.app.os.makedirs')
     @mock.patch('subprocess.check_call')
-    def test_without_selenium_grid(self, mocked_subprocess):
+    def test_without_selenium_grid(self, mocked_subprocess, mocked_makedirs):
         os.environ['CONNECT_TO_GRID'] = str(False)
         self.assertFalse(mocked_subprocess.called)
         app.appium_run(self.avd_name)
         self.assertTrue(mocked_subprocess.called)
+        mocked_makedirs.assert_called_once_with('/var/log/supervisor/appium_logs', exist_ok=True)
 
+    @mock.patch('src.app.os.makedirs')
     @mock.patch('os.popen')
     @mock.patch('subprocess.check_call')
-    def test_with_selenium_grid(self, mocked_os, mocked_subprocess):
+    def test_with_selenium_grid(self, mocked_subprocess, mocked_os, mocked_makedirs):
         with mock.patch('src.app.create_node_config') as mocked_config:
             self.assertFalse(mocked_config.called)
             self.assertFalse(mocked_os.called)
@@ -41,10 +48,11 @@ class TestAppium(TestCase):
             self.assertTrue(mocked_os.called)
             self.assertTrue(mocked_subprocess.called)
 
+    @mock.patch('src.app.os.makedirs')
     @mock.patch('os.popen')
     @mock.patch('subprocess.check_call')
     @mock.patch('src.app.logger')
-    def test_invalid_integer(self, mocked_logger, mocked_subprocess, mocked_os):
+    def test_invalid_integer(self, mocked_logger, mocked_subprocess, mocked_os, mocked_makedirs):
         os.environ['APPIUM_PORT'] = 'test'
         with mock.patch('src.app.create_node_config') as mocked_config:
             self.assertFalse(mocked_config.called)
