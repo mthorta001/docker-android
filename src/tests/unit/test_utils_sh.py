@@ -18,6 +18,7 @@ class TestUtilsSh(TestCase):
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.tmp_path = Path(self.tmp_dir.name)
         self.calls_file = self.tmp_path / "curl_calls.log"
+        self.pkill_calls_file = self.tmp_path / "pkill_calls.log"
         self.stubs_dir = self.tmp_path / "bin"
         self.stubs_dir.mkdir()
         self._write_stub_commands()
@@ -63,7 +64,41 @@ class TestUtilsSh(TestCase):
         self.assertIn("start a new appium with command:", result.stdout)
         self.assertNotIn("--session-override", result.stdout)
         self.assertIn("Stopping auxiliary Appium server", result.stdout)
+        self.assertIn("Auxiliary Appium server (PID:", result.stdout)
+        self.assertIn("stopped", result.stdout)
         self.assertIn("PID_AFTER_STOP:", result.stdout)
+        pkill_calls = self.pkill_calls_file.read_text() if self.pkill_calls_file.exists() else ""
+        self.assertEqual(pkill_calls, "", "pkill should not be called when BACK_APPIUM_PID is tracked")
+
+    def test_stop_back_appium_handles_already_stopped_process(self):
+        result = self._run_utils_function(dedent("""
+            (exit 0) &
+            BACK_APPIUM_PID=$!
+            export BACK_APPIUM_PID
+            wait $BACK_APPIUM_PID 2>/dev/null || true
+            stop_back_appium
+            echo "PID_AFTER_STOP:$BACK_APPIUM_PID"
+        """))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Stopping auxiliary Appium server", result.stdout)
+        self.assertIn("already stopped", result.stdout)
+        self.assertIn("PID_AFTER_STOP:", result.stdout)
+        pkill_calls = self.pkill_calls_file.read_text() if self.pkill_calls_file.exists() else ""
+        self.assertEqual(pkill_calls, "", "pkill should not be called when BACK_APPIUM_PID was tracked")
+
+    def test_stop_back_appium_falls_back_to_pkill_when_pid_unset(self):
+        result = self._run_utils_function(dedent("""
+            unset BACK_APPIUM_PID
+            export APPIUM_PORT2=4732
+            stop_back_appium
+        """))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Stopping auxiliary Appium server", result.stdout)
+        self.assertIn("Auxiliary Appium server on port 4732 stopped", result.stdout)
+        pkill_calls = self.pkill_calls_file.read_text() if self.pkill_calls_file.exists() else ""
+        self.assertIn("-f appium -p 4732", pkill_calls)
 
     def _run_utils_function(self, command, env_overrides=None):
         prelude = UTILS_SH.read_text().split("\nbotman_team start emulator:", 1)[0]
@@ -78,6 +113,7 @@ class TestUtilsSh(TestCase):
             "DEVICE_SPY": "https://device-spy.example/api/v1/capabilities",
             "HOST_IP": "10.32.46.151",
             "PATH": f"{self.stubs_dir}:{env['PATH']}",
+            "PKILL_CALLS": str(self.pkill_calls_file),
             "TARGET_PORT": "6081",
             "UDID": "emulator-5856",
         })
@@ -99,7 +135,16 @@ class TestUtilsSh(TestCase):
     def _write_stub_commands(self):
         (self.stubs_dir / "appium").write_text(dedent("""\
             #!/bin/bash
-            echo "2.10.3"
+            if [[ "$*" == *"-p "* ]]; then
+              trap 'exit 0' TERM INT
+              while true; do sleep 0.1; done
+            else
+              echo "2.10.3"
+            fi
+        """))
+        (self.stubs_dir / "pkill").write_text(dedent("""\
+            #!/bin/bash
+            echo "$*" >> "$PKILL_CALLS"
         """))
         (self.stubs_dir / "curl").write_text(dedent("""\
             #!/bin/bash

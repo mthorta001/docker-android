@@ -249,10 +249,14 @@ function back_appium_run() {
 
 function stop_back_appium() {
   echo "$(date "+%F %T") Stopping auxiliary Appium server..."
-  if [ -n "$BACK_APPIUM_PID" ] && kill -0 "$BACK_APPIUM_PID" 2>/dev/null; then
-    kill "$BACK_APPIUM_PID" 2>/dev/null || true
-    wait "$BACK_APPIUM_PID" 2>/dev/null || true
-    echo "$(date "+%F %T") Auxiliary Appium server (PID: $BACK_APPIUM_PID) stopped"
+  if [ -n "$BACK_APPIUM_PID" ]; then
+    if kill -0 "$BACK_APPIUM_PID" 2>/dev/null; then
+      kill "$BACK_APPIUM_PID" 2>/dev/null || true
+      wait "$BACK_APPIUM_PID" 2>/dev/null || true
+      echo "$(date "+%F %T") Auxiliary Appium server (PID: $BACK_APPIUM_PID) stopped"
+    else
+      echo "$(date "+%F %T") Auxiliary Appium server (PID: $BACK_APPIUM_PID) already stopped"
+    fi
   elif [ -n "$APPIUM_PORT2" ]; then
     pkill -f "appium -p $APPIUM_PORT2" 2>/dev/null || true
     echo "$(date "+%F %T") Auxiliary Appium server on port $APPIUM_PORT2 stopped"
