@@ -223,7 +223,7 @@ def appium_run(avd_name: str):
     if appium_log_dir:
         os.makedirs(appium_log_dir, exist_ok=True)
 
-    cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone --session-override ' \
+    cmd = 'appium --log {log} -p {appium_port} --log-timestamp --local-timezone ' \
           '--base-path /wd/hub --use-plugins=relaxed-caps,images' \
         .format(log=appium_log_path, appium_port=appium_port)
 
@@ -266,7 +266,7 @@ def back_appium_run():
     appium_port2 = appium_port + 1
     os.environ['APPIUM_PORT2'] = str(appium_port2)
     logger.info(f"APPIUM_PORT2 set to: {os.getenv('APPIUM_PORT2')}")
-    cmd = 'appium -p {appium_port} --relaxed-security --log-timestamp --local-timezone --session-override ' \
+    cmd = 'appium -p {appium_port} --relaxed-security --log-timestamp --local-timezone ' \
           '--base-path /wd/hub --use-plugins=relaxed-caps,images' \
         .format(appium_port=appium_port2)
     logger.info("appium2 command: {command}".format(command=cmd))

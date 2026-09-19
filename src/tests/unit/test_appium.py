@@ -23,6 +23,7 @@ class TestAppium(TestCase):
         app.appium_run(self.avd_name)
         self.assertTrue(mocked_subprocess.called)
         self.assertNotIn('xterm', mocked_subprocess.call_args.args[0])
+        self.assertNotIn('--session-override', mocked_subprocess.call_args.args[0])
         self.assertIn('--base-path /wd/hub', mocked_subprocess.call_args.args[0])
         mocked_makedirs.assert_called_once_with('/var/log/supervisor/appium_logs', exist_ok=True)
 
@@ -33,6 +34,7 @@ class TestAppium(TestCase):
         self.assertFalse(mocked_subprocess.called)
         app.appium_run(self.avd_name)
         self.assertTrue(mocked_subprocess.called)
+        self.assertNotIn('--session-override', mocked_subprocess.call_args.args[0])
         mocked_makedirs.assert_called_once_with('/var/log/supervisor/appium_logs', exist_ok=True)
 
     @mock.patch('src.app.os.makedirs')

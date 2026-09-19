@@ -239,10 +239,29 @@ function back_appium_run() {
   ((APPIUM_PORT2 = $APPIUM_PORT + 1))
   export APPIUM_PORT2=$APPIUM_PORT2
   echo "$(date "+%F %T") APPIUM_PORT2 set to: $APPIUM_PORT2"
-  cmd="appium -p $APPIUM_PORT2 --relaxed-security --log-timestamp --local-timezone --session-override \
+  cmd="appium -p $APPIUM_PORT2 --relaxed-security --log-timestamp --local-timezone \
         --base-path /wd/hub --use-plugins=relaxed-caps,images"
   echo "$(date "+%F %T") start a new appium with command:\n $cmd"
   nohup $cmd > /dev/null 2>&1 &
+  BACK_APPIUM_PID=$!
+  export BACK_APPIUM_PID
+}
+
+function stop_back_appium() {
+  echo "$(date "+%F %T") Stopping auxiliary Appium server..."
+  if [ -n "$BACK_APPIUM_PID" ]; then
+    if kill -0 "$BACK_APPIUM_PID" 2>/dev/null; then
+      kill "$BACK_APPIUM_PID" 2>/dev/null || true
+      wait "$BACK_APPIUM_PID" 2>/dev/null || true
+      echo "$(date "+%F %T") Auxiliary Appium server (PID: $BACK_APPIUM_PID) stopped"
+    else
+      echo "$(date "+%F %T") Auxiliary Appium server (PID: $BACK_APPIUM_PID) already stopped"
+    fi
+  elif [ -n "$APPIUM_PORT2" ]; then
+    pkill -f "appium -p $APPIUM_PORT2" 2>/dev/null || true
+    echo "$(date "+%F %T") Auxiliary Appium server on port $APPIUM_PORT2 stopped"
+  fi
+  unset BACK_APPIUM_PID
 }
 
 
@@ -289,6 +308,7 @@ CHROME_NO_THANKS_BTN_ID="com.android.chrome:id/negative_button"
 function handle_chrome_alert() {
   if ! check_appium_server_repeatedly; then
     echo "$(date "+%F %T") Appium server is not running. Exiting."
+    stop_back_appium
     return 1
   fi
 
@@ -307,24 +327,27 @@ function handle_chrome_alert() {
     }' | jq -r '.value.sessionId')
     echo "$(date "+%F %T") Session ID: $SESSION_ID"
   
-  ELEMENT_ID="null"
-  for i in {1..10}; do
-    ELEMENT_ID=$(curl -s -X POST http://127.0.0.1:${APPIUM_PORT2}/wd/hub/session/$SESSION_ID/element -H "Content-Type: application/json" -d '{
-      "using": "id",
-      "value": "'"$CHROME_NO_THANKS_BTN_ID"'"
-      }' | jq -r '.value.ELEMENT')
-    if [ "$ELEMENT_ID" != "null" ]; then
-      echo "$(date "+%F %T") Element ID: $ELEMENT_ID"
-      curl -X POST http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID/element/$ELEMENT_ID/click -H "Content-Type: application/json"
-      echo "$(date "+%F %T") Button clicked"
-      break
-    else
-      echo "Element not found, retrying... ($i)"
-      sleep 2
-    fi
-  done
-  curl -s -X DELETE http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID
-  echo "$(date "+%F %T") Session closed"
+  if [ -n "$SESSION_ID" ] && [ "$SESSION_ID" != "null" ]; then
+    ELEMENT_ID="null"
+    for i in {1..10}; do
+      ELEMENT_ID=$(curl -s -X POST http://127.0.0.1:${APPIUM_PORT2}/wd/hub/session/$SESSION_ID/element -H "Content-Type: application/json" -d '{
+        "using": "id",
+        "value": "'"$CHROME_NO_THANKS_BTN_ID"'"
+        }' | jq -r '.value.ELEMENT')
+      if [ "$ELEMENT_ID" != "null" ]; then
+        echo "$(date "+%F %T") Element ID: $ELEMENT_ID"
+        curl -X POST http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID/element/$ELEMENT_ID/click -H "Content-Type: application/json"
+        echo "$(date "+%F %T") Button clicked"
+        break
+      else
+        echo "Element not found, retrying... ($i)"
+        sleep 2
+      fi
+    done
+    curl -s -X DELETE http://127.0.0.1:$APPIUM_PORT2/wd/hub/session/$SESSION_ID
+    echo "$(date "+%F %T") Session closed"
+  fi
+  stop_back_appium
 }
 
 # close System UI isn't responding when start
@@ -454,6 +477,7 @@ sleep 1
 back_appium_run
 sleep 1
 handle_chrome_alert
+stop_back_appium
 
 echo "$(date "+%F %T") start while checking..."
 no_device_count=0
